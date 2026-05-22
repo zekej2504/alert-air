@@ -1,0 +1,65 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- UPDATED: The Parent Company Model ---
+model Company {
+  id          String     @id @default(uuid())
+  name        String     
+  contact     String     @unique // <-- NEW: Ensures no duplicate accounts
+  password    String     // <-- NEW: Where the scrambled password lives
+  worksites   Worksite[] 
+}
+
+// --- UPDATED: The Worksite Model ---
+model Worksite {
+  id            String   @id @default(uuid())
+  incidentName  String
+  state         String
+  latitude      Float
+  longitude     Float
+  foremanPhone  String
+  carrier      String?
+  crewLeadName  String   @default("Pending")
+  isActive      Boolean  @default(true)
+  
+  // The new multi-tenant link:
+  companyId     String
+  company       Company  @relation(fields: [companyId], references: [id])
+
+  // Your existing compliance links:
+  signoffs      ComplianceSignoff[]
+  airQualityLogs AirQualityLog[]
+}
+
+// --- EXISTING: Compliance Logs ---
+model ComplianceSignoff {
+  id            String   @id @default(uuid())
+  worksiteId    String
+  logId         String
+  signatureHash String   @unique
+  
+  worksite      Worksite @relation(fields: [worksiteId], references: [id])
+}
+
+model AirQualityLog {
+  id            String   @id @default(uuid())
+  worksiteId    String
+  pm25_aqi      Int
+  thresholdMet  Boolean
+  
+  worksite      Worksite @relation(fields: [worksiteId], references: [id])
+}
+// --- NEW: State-by-State Regulatory Thresholds ---
+model StateRegulation {
+  id        String   @id @default(uuid())
+  stateCode String   @unique // e.g., "CA", "OR", "WA"
+  maxAqi    Int      // The legal limit before respirators are required
+}
