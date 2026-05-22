@@ -267,6 +267,31 @@ app.post('/api/worksite/:id/update-crew', async (req, res) => {
 });
 
 // --- THE COMPLIANCE AUDIT DASHBOARD ---
+app.get('/', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Alert Air Wildfire Compliance</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="bg-slate-50 flex items-center justify-center min-h-screen">
+      <div class="text-center p-10 bg-white shadow-2xl rounded-2xl max-w-3xl border border-slate-100">
+        <div class="mb-6 inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-blue-600">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+        </div>
+        <h1 class="text-5xl font-extrabold text-slate-900 mb-6 tracking-tight">Alert Air Wildfire Compliance</h1>
+        <p class="text-xl text-slate-600 mb-10 leading-relaxed">Automated AQI monitoring and zero-touch hazard alerts for your remote crews. Stay compliant. Keep them safe.</p>
+        <div class="flex justify-center gap-4">
+          <a href="/admin" class="bg-blue-600 text-white px-8 py-4 rounded-lg font-bold hover:bg-blue-700 transition shadow-lg hover:shadow-xl">Open Dashboard</a>
+        </div>
+      </div>
+    </body>
+    </html>
+  `);
+});
 app.get('/admin', async (req, res) => {
   // 1. THE BOUNCER: If you don't have a session key, go back to the login page!
   if (!req.session.companyId) {
