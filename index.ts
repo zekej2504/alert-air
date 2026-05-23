@@ -102,13 +102,28 @@ async function runAirQualityCheck() {
         
         // FIRE THE ZERO-COST SMS VIA CARRIER GATEWAY
         try {
-          await transporter.sendMail({
+await transporter.sendMail({
             from: '"Alert Air Compliance" <ezekiel.grayson.johnson@gmail.com>', 
             to: `${site.foremanPhone}${site.carrier}`, 
             subject: 'OSHA ALERT', 
-            text: `⚠️ AQI at ${site.incidentName} hit ${liveAirNowAqi}. N95 respirators required for ${site.company.name}. Sign off: http://localhost:3000/signoff/${site.id}`
+            text: `URGENT: AQI at ${site.incidentName} hit ${liveAirNowAqi}. N95 respirators required for ${site.company.name}. Sign off: https://alert-air-ezio.onrender.com/signoff/${site.id}`
           });
           console.log(`✅ ZERO-COST SMS successfully sent to ${site.crewLeadName} at ${site.foremanPhone}${site.carrier}!`);
+
+          // --- NEW: CC The Admin! ---
+          if (site.company.adminPhone && site.company.adminCarrier) {
+            try {
+              await transporter.sendMail({
+                from: '"Alert Air Compliance" <ezekiel.grayson.johnson@gmail.com>',
+                to: `${site.company.adminPhone}${site.company.adminCarrier}`,
+                subject: 'ADMIN ALERT',
+                text: `ADMIN ALERT: Hazard detected at ${site.incidentName}. Crew lead ${site.crewLeadName} has been notified to distribute N95s. Awaiting signature.`
+              });
+              console.log(`✅ Admin CC'd at ${site.company.adminPhone}!`);
+            } catch (adminErr) {
+              console.log(`❌ Failed to send Admin SMS.`, adminErr);
+            }
+          }
         } catch (emailError) {
           console.log(`❌ Failed to send gateway SMS:`, emailError);
         }
@@ -144,6 +159,13 @@ app.get('/signup', (req, res) => {
             <input type="text" name="companyName" placeholder="Company Name" required style="padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
             <input type="email" name="email" placeholder="Admin Email" required style="padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
             <input type="password" name="password" placeholder="Create Password" required style="padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
+            <input type="text" name="adminPhone" placeholder="Admin Cell (10 Digits)" style="padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
+            <select name="adminCarrier" style="padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; background: white;">
+              <option value="">Select Admin Carrier...</option>
+              <option value="@vtext.com">Verizon</option>
+              <option value="@txt.att.net">AT&T</option>
+              <option value="@tmomail.net">T-Mobile</option>
+            </select>
             <button type="submit" style="background: #5cb85c; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1rem;">Create Account</button>
           </form>
           <p style="margin-top: 1.5rem; font-size: 14px; color: #666;">Already registered? <a href="/login" style="color: #0275d8; text-decoration: none; font-weight: bold;">Login here</a></p>
@@ -154,7 +176,7 @@ app.get('/signup', (req, res) => {
 });
 
 app.post('/signup', async (req, res) => {
-  const { companyName, email, password } = req.body;
+  const { companyName, email, password, adminPhone, adminCarrier } = req.body;
 
   // 1. Check if the email is already taken
   const existingCompany = await prisma.company.findUnique({ where: { contact: email } });
@@ -170,7 +192,9 @@ app.post('/signup', async (req, res) => {
     data: {
       name: companyName,
       contact: email,
-      password: hashedPassword
+      password: hashedPassword,
+      adminPhone: adminPhone,
+      adminCarrier: adminCarrier
     }
   });
 
@@ -340,14 +364,35 @@ app.get('/signoff/:id', (req, res) => {
 app.post('/signoff-submit', async (req, res) => {
   const { siteId, signature } = req.body;
 
-  try {
-    // Lock the signature into the database permanently
+try {
+    // 1. Lock the signature into the database permanently
     await prisma.signOff.create({
       data: {
         siteId: siteId,
         signature: signature,
       }
     });
+
+    // 2. Fetch the worksite and company details to notify the admin
+    const site = await prisma.worksite.findUnique({
+      where: { id: siteId },
+      include: { company: true }
+    });
+
+    // 3. Text the Admin that compliance is secured!
+    if (site && site.company.adminPhone && site.company.adminCarrier) {
+      try {
+        await transporter.sendMail({
+          from: '"Alert Air Compliance" <ezekiel.grayson.johnson@gmail.com>',
+          to: `${site.company.adminPhone}${site.company.adminCarrier}`,
+          subject: 'COMPLIANCE SECURED',
+          text: `COMPLIANCE SECURED: Crew lead ${signature} has officially signed off on N95 distribution for ${site.incidentName}.`
+        });
+        console.log(`✅ Admin notified of compliance for ${site.incidentName}`);
+      } catch (adminErr) {
+        console.error("Failed to CC admin:", adminErr);
+      }
+    }
 
     // Show the success screen so they know they are clear
     res.send(`
@@ -382,10 +427,10 @@ app.get('/admin', async (req, res) => {
     return res.redirect('/login');
   }
 
-  // 2. THE SILO: Only pull worksites that belong to the securely logged-in company
+// 2. THE SILO: Only pull worksites that belong to the securely logged-in company
   const worksites = await prisma.worksite.findMany({
     where: { companyId: req.session.companyId }, 
-    include: { signoffs: true },
+    include: { signOffs: { orderBy: { timestamp: 'desc' } } },
     orderBy: { isActive: 'desc' }
   });
 
@@ -416,8 +461,16 @@ app.get('/admin', async (req, res) => {
             <button type="submit" style="background: ${buttonColor}; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">${toggleAction}</button>
           </form>
         </td>
-        <td style="padding: 16px; color: #555;">
-          <strong>${site.signoffs.length}</strong> Signatures
+<td style="padding: 16px; color: #555; font-size: 13px; max-width: 250px;">
+          ${site.signOffs.length === 0 
+            ? '<span style="color: #dc3545; font-weight: bold;">⚠️ Pending</span>' 
+            : site.signOffs.map(sig => `
+                <div style="margin-bottom: 4px;">
+                  ✅ <strong>${sig.signature}</strong><br>
+                  <span style="font-size: 11px; color: #888;">${new Date(sig.timestamp).toLocaleString()}</span>
+                </div>
+              `).join('<hr style="border: 0; border-top: 1px solid #eee; margin: 8px 0;">')
+          }
         </td>
       </tr>
     `;
