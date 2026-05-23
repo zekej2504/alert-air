@@ -484,7 +484,20 @@ app.get('/admin', async (req, res) => {
               <h2 style="margin-top: 0; color: #2c3e50;">➕ Deploy New Monitor</h2>
               <form action="/api/worksite" method="POST" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
                   <input type="text" name="incidentName" placeholder="Fire Name (e.g. Dixie Fire)" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; flex: 1; min-width: 200px;">
-                  <input type="text" name="state" placeholder="State (CA)" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; width: 80px;">
+                  <input type="text" name="state" placeholder="State (CA)" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; <select name="state" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; width: 100px; background: white;">
+                    <option value="" disabled selected>State</option>
+                    <option value="CA">CA</option>
+                    <option value="OR">OR</option>
+                    <option value="WA">WA</option>
+                    <option value="NV">NV</option>
+                    <option value="ID">ID</option>
+                    <option value="MT">MT</option>
+                    <option value="UT">UT</option>
+                    <option value="AZ">AZ</option>
+                    <option value="CO">CO</option>
+                    <option value="WY">WY</option>
+                    <option value="NM">NM</option>
+                  </select>width: 80px;">
                   <input type="number" step="any" name="latitude" placeholder="Latitude" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; width: 120px;">
                   <input type="number" step="any" name="longitude" placeholder="Longitude" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; width: 120px;">
 <input type="text" name="crewLeadName" placeholder="Crew Lead Name" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
