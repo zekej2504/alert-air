@@ -62,9 +62,10 @@ model AirQualityLog {
 }
 // --- NEW: State-by-State Regulatory Thresholds ---
 model StateRegulation {
-  id        String   @id @default(uuid())
-  stateCode String   @unique // e.g., "CA", "OR", "WA"
-  maxAqi    Int      // The legal limit before respirators are required
+  id           String   @id @default(uuid())
+  stateCode    String   @unique 
+  voluntaryAqi Int?     // AQI when N95s must be PROVIDED
+  mandatoryAqi Int?     // AQI when N95s must be ENFORCED
 }
 // --- NEW: The Legal Compliance Trail ---
 model SignOff {

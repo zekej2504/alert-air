@@ -32,7 +32,6 @@ const prisma = new PrismaClient();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // --- AUTO-SEED LEGAL THRESHOLDS (THE AMERICAN WEST) ---
-async function seedLaws() {
   const laws = [
     // States with specific wildfire smoke standards
     { stateCode: "OR", maxAqi: 101 }, // Oregon OSHA standard
@@ -52,16 +51,6 @@ async function seedLaws() {
     { stateCode: "HI", maxAqi: 151 }
   ];
 
-  for (const law of laws) {
-    await prisma.stateRegulation.upsert({
-      where: { stateCode: law.stateCode },
-      update: {}, // If it already exists, do nothing
-      create: law // If it doesn't exist, create it
-    });
-  }
-}
-seedLaws();
-
 // --- SECURITY MIDDLEWARE ---
 app.use(session({
   secret: 'osha-super-secret-key-2026', // In production, this goes in your .env file
@@ -71,46 +60,51 @@ app.use(session({
 
 // --- THE AUTOMATED ENGINE (SIMULATION MODE) ---
 async function runAirQualityCheck() {
-  console.log('\n📡 Initiating hourly OSHA smoke check for active worksites...');
-
-  // 1. Get all active sites AND pull in their parent company details
-  const activeSites = await prisma.worksite.findMany({
+  // 1. Get all active worksites and INCLUDE the company data (This fixes the admin errors!)
+  const worksites = await prisma.worksite.findMany({
     where: { isActive: true },
-    include: { company: true } 
+    include: { company: true }
   });
 
-  for (const site of activeSites) {
+  for (const site of worksites) {
     try {
-      // 2. Look up the specific state law for this worksite
+      // 2. Fetch the specific state law
       const stateLaw = await prisma.stateRegulation.findUnique({
         where: { stateCode: site.state }
       });
 
-      // If the state isn't in our DB, default to the Federal EPA standard (151)
-      const legalLimit = stateLaw ? stateLaw.maxAqi : 151;
+      // 3. Extract the dual-tier thresholds (Default to 151 if no law exists)
+      const voluntaryLimit = stateLaw?.voluntaryAqi || 151;
+      const mandatoryLimit = stateLaw?.mandatoryAqi || 9999; 
 
-      // 3. Ping the Weather API 
-      // (Simulating AirNow for now: generates a random live AQI between 80 and 180)
-      const liveAirNowAqi = Math.floor(Math.random() * (180 - 80 + 1) + 80); 
+      // 4. Ping the Weather API (Generating up to 300 so we can test mandatory limits)
+      const liveAirNowAqi = Math.floor(Math.random() * (300 - 80 + 1) + 80);
+      console.log(`📍 ${site.incidentName} (${site.state}): Live AQI is ${liveAirNowAqi}`);
 
-      console.log(`📍 ${site.incidentName} (${site.state}): Live AQI is ${liveAirNowAqi}. Legal Limit is ${legalLimit}.`);
+      // 5. Compare Live Weather against Dual-Tier Laws
+      let alertLevel = "";
+      if (liveAirNowAqi >= mandatoryLimit) {
+        alertLevel = "MANDATORY";
+      } else if (liveAirNowAqi >= voluntaryLimit) {
+        alertLevel = "VOLUNTARY";
+      }
 
-      // 4. Compare the Live Weather against the State Law
-   if (liveAirNowAqi >= legalLimit) {
+      // 6. Fire Alerts if a threshold is broken
+      if (alertLevel !== "") {
         console.log(`⚠️ HAZARD DETECTED! Limit Exceeded. Logging API data...`);
         console.log(`======================================================`);
-        
-        // FIRE THE ZERO-COST SMS VIA CARRIER GATEWAY
+
         try {
-await transporter.sendMail({
-            from: '"Alert Air Compliance" <ezekiel.grayson.johnson@gmail.com>', 
-            to: `${site.foremanPhone}${site.carrier}`, 
-            subject: 'OSHA ALERT', 
-            text: `URGENT: AQI at ${site.incidentName} hit ${liveAirNowAqi}. N95 respirators required for ${site.company.name}. Sign off: https://alert-air-ezio.onrender.com/signoff/${site.id}`
+          // SMS to Crew Lead
+          await transporter.sendMail({
+            from: '"Alert Air Compliance" <ezekiel.grayson.johnson@gmail.com>',
+            to: `${site.foremanPhone}${site.carrier}`,
+            subject: 'OSHA ALERT',
+            text: `URGENT (${alertLevel}): AQI at ${site.incidentName} hit ${liveAirNowAqi}. N95 protocols triggered for ${site.company.name}. Sign off: https://alert-air-ezio.onrender.com/signoff/${site.id}`
           });
           console.log(`✅ ZERO-COST SMS successfully sent to ${site.crewLeadName} at ${site.foremanPhone}${site.carrier}!`);
 
-          // --- NEW: CC The Admin! ---
+          // SMS to Admin (CC)
           if (site.company.adminPhone && site.company.adminCarrier) {
             try {
               await transporter.sendMail({
@@ -127,7 +121,6 @@ await transporter.sendMail({
         } catch (emailError) {
           console.log(`❌ Failed to send gateway SMS:`, emailError);
         }
-        
         console.log(`======================================================\n`);
       } else {
         console.log(`✅ Safe conditions. No action required.`);
@@ -421,6 +414,28 @@ try {
   }
 });
 
+// --- TEMPORARY ROUTE: INJECT STATE LAWS INTO DATABASE ---
+app.get('/admin/seed-laws', async (req, res) => {
+  await prisma.stateRegulation.createMany({
+    data: [
+      { stateCode: 'CA', voluntaryAqi: 151, mandatoryAqi: 501 },
+      { stateCode: 'OR', voluntaryAqi: 101, mandatoryAqi: 251 },
+      { stateCode: 'WA', voluntaryAqi: 69,  mandatoryAqi: 101 },
+      { stateCode: 'NV', voluntaryAqi: 151, mandatoryAqi: null },
+      { stateCode: 'ID', voluntaryAqi: 151, mandatoryAqi: null },
+      { stateCode: 'MT', voluntaryAqi: 151, mandatoryAqi: null },
+      { stateCode: 'UT', voluntaryAqi: 151, mandatoryAqi: null },
+      { stateCode: 'AZ', voluntaryAqi: 151, mandatoryAqi: null },
+      { stateCode: 'CO', voluntaryAqi: 151, mandatoryAqi: null },
+      { stateCode: 'WY', voluntaryAqi: 151, mandatoryAqi: null },
+      { stateCode: 'NM', voluntaryAqi: 151, mandatoryAqi: null },
+    ],
+    skipDuplicates: true // Prevents errors if you run it twice
+  });
+  res.send("<h1 style='color: green; font-family: sans-serif; text-align: center; margin-top: 3rem;'>✅ State Laws Injected Successfully!</h1>");
+});
+
+// --- THE AUDIT DASHBOARD ---
 app.get('/admin', async (req, res) => {
   // 1. THE BOUNCER: If you don't have a session key, go back to the login page!
   if (!req.session.companyId) {
@@ -677,5 +692,11 @@ app.post('/api/signoff', async (req, res) => {
   }
 });
 
+// --- THE HEARTBEAT: AUTOMATED HOURLY CHECKS ---
+cron.schedule('0 * * * *', () => {
+  console.log('\n⏰ CRON TRIGGER: Initiating hourly Alert Air compliance check...');
+  runAirQualityCheck();
+});
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🔥 OSHA Logger Server running locally on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`🔥 Alert Air Server running on port ${PORT}`));
