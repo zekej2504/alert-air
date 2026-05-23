@@ -48,7 +48,7 @@ model ComplianceSignoff {
   worksiteId    String
   logId         String
   signatureHash String   @unique
-  
+  createdAt DateTime @default(now())
   worksite      Worksite @relation(fields: [worksiteId], references: [id])
 }
 

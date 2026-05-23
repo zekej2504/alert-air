@@ -491,15 +491,17 @@ app.get('/admin', async (req, res) => {
     `;
   }).join('');
 
-  res.send(`
+res.send(`
     <html>
       <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f7f6; padding: 3rem; color: #333; margin: 0;">
         <div style="max-width: 1000px; margin: 0 auto;">
+            
             <div style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 2rem;">
               <h2 style="margin-top: 0; color: #2c3e50;">➕ Deploy New Monitor</h2>
               <form action="/api/worksite" method="POST" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
                   <input type="text" name="incidentName" placeholder="Fire Name (e.g. Dixie Fire)" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; flex: 1; min-width: 200px;">
-                  <input type="text" name="state" placeholder="State (CA)" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; <select name="state" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; width: 100px; background: white;">
+                  
+                  <select name="state" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; width: 100px; background: white;">
                     <option value="" disabled selected>State</option>
                     <option value="CA">CA</option>
                     <option value="OR">OR</option>
@@ -512,43 +514,48 @@ app.get('/admin', async (req, res) => {
                     <option value="CO">CO</option>
                     <option value="WY">WY</option>
                     <option value="NM">NM</option>
-                  </select>width: 80px;">
+                  </select>
+
                   <input type="number" step="any" name="latitude" placeholder="Latitude" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; width: 120px;">
                   <input type="number" step="any" name="longitude" placeholder="Longitude" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; width: 120px;">
-<input type="text" name="crewLeadName" placeholder="Crew Lead Name" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
-<input type="text" name="foremanPhone" placeholder="10-Digit Phone" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
+                  <input type="text" name="crewLeadName" placeholder="Crew Lead Name" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
+                  <input type="text" name="foremanPhone" placeholder="10-Digit Phone" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
 
-<select name="carrier" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; background: white;">
-  <option value="">Select Carrier...</option>
-  <option value="@vtext.com">Verizon</option>
-  <option value="@txt.att.net">AT&T</option>
-  <option value="@tmomail.net">T-Mobile</option>
-</select>
+                  <select name="carrier" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; background: white;">
+                    <option value="">Select Carrier...</option>
+                    <option value="@vtext.com">Verizon</option>
+                    <option value="@txt.att.net">AT&T</option>
+                    <option value="@tmomail.net">T-Mobile</option>
+                  </select>
 
-<button type="submit" style="background: #5cb85c; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold;">Deploy New Monitor</button>
+                  <button type="submit" style="background: #5cb85c; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold;">Deploy New Monitor</button>
               </form>
             </div>
+
             <div style="background: white; padding: 3rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
               <div style="border-bottom: 2px solid #eee; padding-bottom: 1rem; margin-bottom: 2rem;">
-  <h1 style="color: #0275d8; font-size: 26px; margin: 0; letter-spacing: -0.5px;">Alert Air Wildfire Compliance</h1>
-  <p style="color: #6c757d; margin-top: 6px; margin-bottom: 0; font-size: 15px; font-weight: 500;">Active Command Center</p>
-</div>
+                <h1 style="color: #0275d8; font-size: 26px; margin: 0; letter-spacing: -0.5px;">Alert Air Wildfire Compliance</h1>
+                <p style="color: #6c757d; margin-top: 6px; margin-bottom: 0; font-size: 15px; font-weight: 500;">Active Command Center</p>
+                
+                <a href="/admin/audit" style="display: inline-block; background: #28a745; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 15px;">📜 View Audit Ledger</a>
+              </div>
+              
               <div style="overflow-x: auto; width: 100%;">
-            <table style="width: 100%; min-width: 800px; border-collapse: collapse; text-align: left;">
-              <thead>
-                <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; color: #495057; font-size: 14px;">
-                  <th style="padding: 12px 16px;">INCIDENT NAME</th>
-                  <th style="padding: 12px 16px;">STATUS</th>
-                  <th style="padding: 12px 16px;">CREW LEAD DETAILS</th>
-                  <th style="padding: 12px 16px;">ACTIONS</th>
-                  <th style="padding: 12px 16px;">COMPLIANCE LOGS</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${rows}
-              </tbody>
-            </table>
-          </div>
+                <table style="width: 100%; min-width: 800px; border-collapse: collapse; text-align: left;">
+                  <thead>
+                    <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; color: #495057; font-size: 14px;">
+                      <th style="padding: 12px 16px;">INCIDENT NAME</th>
+                      <th style="padding: 12px 16px;">STATUS</th>
+                      <th style="padding: 12px 16px;">CREW LEAD DETAILS</th>
+                      <th style="padding: 12px 16px;">ACTIONS</th>
+                      <th style="padding: 12px 16px;">COMPLIANCE LOGS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${rows}
+                  </tbody>
+                </table>
+              </div>
             </div>
         </div>
       </body>
@@ -689,6 +696,65 @@ app.post('/api/signoff', async (req, res) => {
     `);
   } catch (error) {
     res.send("<h2 style='font-family: sans-serif; color: red; text-align: center; margin-top: 3rem;'>Error: This compliance log has already been signed!</h2>");
+  }
+});
+
+// --- THE IMMUTABLE AUDIT LEDGER ---
+app.get('/admin/audit', async (req, res) => {
+  try {
+    // 1. Fetch all sign-offs directly
+    const logs = await prisma.complianceSignoff.findMany({
+      orderBy: { createdAt: 'desc' } // Newest signatures first
+    });
+
+    // 2. Build the secure paper trail table by manually looking up the worksite
+    let tableRows = "";
+    for (const log of logs) {
+      const worksite = await prisma.worksite.findUnique({
+        where: { id: log.worksiteId },
+        include: { company: true }
+      });
+
+      tableRows += `
+        <tr style="border-bottom: 1px solid #e0e0e0;">
+          <td style="padding: 12px; color: #555;">${new Date(log.createdAt).toLocaleString()}</td>
+          <td style="padding: 12px; font-weight: bold;">${worksite?.company?.name || 'Unknown'}</td>
+          <td style="padding: 12px;">${worksite?.incidentName || 'N/A'} (${worksite?.state || 'N/A'})</td>
+          <td style="padding: 12px;">${worksite?.crewLeadName || 'Unknown'}</td>
+          <td style="padding: 12px; font-family: monospace; color: #d63384; font-size: 0.85rem;">${log.signatureHash}</td>
+        </tr>
+      `;
+    }
+
+    // 3. Render the Dashboard
+    res.send(`
+      <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 1000px; margin: 40px auto; padding: 20px;">
+        <h1 style="color: #111; margin-bottom: 5px;">⚖️ Compliance Audit Ledger</h1>
+        <p style="color: #666; margin-bottom: 30px;">Cryptographically secured paper trail of crew lead N95 distribution sign-offs.</p>
+        
+        <div style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+          <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead style="background: #f8f9fa;">
+              <tr>
+                <th style="padding: 12px; border-bottom: 2px solid #e0e0e0;">Legal Timestamp</th>
+                <th style="padding: 12px; border-bottom: 2px solid #e0e0e0;">Company</th>
+                <th style="padding: 12px; border-bottom: 2px solid #e0e0e0;">Incident (State)</th>
+                <th style="padding: 12px; border-bottom: 2px solid #e0e0e0;">Crew Lead</th>
+                <th style="padding: 12px; border-bottom: 2px solid #e0e0e0;">Signature Hash</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows.length > 0 ? tableRows : '<tr><td colspan="5" style="padding: 30px; text-align: center; color: #999;">No compliance signatures logged yet.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+        
+        <a href="/admin" style="display: inline-block; margin-top: 20px; text-decoration: none; color: #007bff; font-weight: 500;">&larr; Back to Deployments</a>
+      </div>
+    `);
+  } catch (error) {
+    console.error("Audit Ledger Error:", error);
+    res.status(500).send("<h2 style='color: red; text-align: center;'>Failed to load the Audit Ledger.</h2>");
   }
 });
 
