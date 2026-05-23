@@ -37,6 +37,7 @@ model Worksite {
   // Your existing compliance links:
   signoffs      ComplianceSignoff[]
   airQualityLogs AirQualityLog[]
+  signOffs    SignOff[]
 }
 
 // --- EXISTING: Compliance Logs ---
@@ -62,4 +63,12 @@ model StateRegulation {
   id        String   @id @default(uuid())
   stateCode String   @unique // e.g., "CA", "OR", "WA"
   maxAqi    Int      // The legal limit before respirators are required
+}
+// --- NEW: The Legal Compliance Trail ---
+model SignOff {
+  id        String   @id @default(uuid())
+  signature String   // The typed name of the crew lead
+  timestamp DateTime @default(now()) // Automatically locks in the exact millisecond
+  siteId    String
+  site      Worksite @relation(fields: [siteId], references: [id])
 }

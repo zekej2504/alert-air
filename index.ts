@@ -292,6 +292,90 @@ app.get('/', (req, res) => {
     </html>
   `);
 });
+
+// 2. THE WORKER SIGN-OFF PORTAL (UPDATED WITH SIGNATURE)
+// 2. THE WORKER SIGN-OFF PORTAL (UPDATED WITH SIGNATURE)
+app.get('/signoff/:id', (req, res) => {
+  const siteId = req.params.id;
+
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Safety Acknowledgment</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="bg-slate-900 flex items-center justify-center min-h-screen p-4">
+      <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full text-center border-t-8 border-red-600">
+        <div class="text-red-600 mb-4 flex justify-center">
+          <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        </div>
+        <h1 class="text-2xl font-black text-slate-900 mb-2 tracking-tight">HAZARD DETECTED</h1>
+        <p class="text-slate-600 mb-6 font-medium">Air quality has reached hazardous levels. By signing below, I confirm all personnel have been issued N95 respirators.</p>
+        
+        <form action="/signoff-submit" method="POST" class="text-left">
+          <input type="hidden" name="siteId" value="${siteId}">
+          
+          <div class="mb-6">
+            <label class="block text-slate-700 text-sm font-bold mb-2 uppercase tracking-wide" for="signature">
+              Crew Lead Electronic Signature
+            </label>
+            <input class="shadow-sm appearance-none border-2 border-slate-200 rounded-lg w-full py-3 px-4 text-slate-900 leading-tight focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition" id="signature" name="signature" type="text" placeholder="Type your full legal name" required>
+          </div>
+
+          <button type="submit" class="w-full bg-red-600 text-white font-bold py-4 rounded-lg hover:bg-red-700 transition shadow-lg text-lg tracking-wide">
+            I ACKNOWLEDGE & COMPLY
+          </button>
+        </form>
+      </div>
+    </body>
+    </html>
+  `);
+});
+
+// 3. THE COMPLIANCE CATCHER
+// Note: express.urlencoded is required to read form data!
+app.post('/signoff-submit', async (req, res) => {
+  const { siteId, signature } = req.body;
+
+  try {
+    // Lock the signature into the database permanently
+    await prisma.signOff.create({
+      data: {
+        siteId: siteId,
+        signature: signature,
+      }
+    });
+
+    // Show the success screen so they know they are clear
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Compliance Logged</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+      </head>
+      <body class="bg-slate-900 flex items-center justify-center min-h-screen p-4">
+        <div class="text-center">
+          <div class="text-emerald-500 mb-6 flex justify-center">
+             <svg class="w-24 h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          </div>
+          <h1 class="text-4xl font-black text-white mb-4 tracking-tight">Signature Logged</h1>
+          <p class="text-lg text-slate-400 font-medium max-w-sm mx-auto">Your compliance record has been securely timestamped and attached to the worksite file. It is safe to close this page.</p>
+        </div>
+      </body>
+      </html>
+    `);
+  } catch (error) {
+    console.error("Failed to log signature:", error);
+    res.status(500).send("Database Error. Please try again.");
+  }
+});
+
 app.get('/admin', async (req, res) => {
   // 1. THE BOUNCER: If you don't have a session key, go back to the login page!
   if (!req.session.companyId) {
