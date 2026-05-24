@@ -302,9 +302,9 @@ app.get('/', (req, res) => {
           <p class="text-xl md:text-2xl text-slate-300 font-medium mb-10 max-w-3xl mx-auto">
             State OSHA agencies are hammering wildfire crews with surprise air quality inspections. One missing paper logbook can blacklist your business.
           </p>
-          <a href="/login" class="inline-block bg-red-600 hover:bg-red-700 text-white font-bold text-lg py-4 px-10 rounded-lg shadow-lg transition-transform transform hover:scale-105">
-            Protect Your Crews Today
-          </a>
+          <a href="/signup" class="inline-block bg-red-600 hover:bg-red-700 text-white font-bold text-lg py-4 px-10 rounded-lg shadow-lg transition-transform transform hover:scale-105">
+  Protect Your Crews Today
+</a>
         </div>
       </header>
 
@@ -377,9 +377,9 @@ app.get('/', (req, res) => {
               <li>✅ <strong class="text-gray-900">No Annual Contracts.</strong> Cancel anytime.</li>
               <li>✅ <strong class="text-gray-900">Zero Off-Season Waste.</strong> Only pay for deployed crews. Demobilize them in the winter and your bill drops to $0.</li>
             </ul>
-            <a href="/login" class="block w-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-xl py-4 rounded-lg shadow transition-colors">
-              Start Your 14-Day Free Trial
-            </a>
+            <a href="/signup" class="block w-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-xl py-4 rounded-lg shadow transition-colors">
+  Start Your 14-Day Free Trial
+</a>
           </div>
         </div>
       </section>
