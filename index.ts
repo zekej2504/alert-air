@@ -283,7 +283,7 @@ app.post('/api/worksite/:id/update-crew', async (req, res) => {
   res.redirect('/admin');
 });
 
-// --- THE COMPLIANCE AUDIT DASHBOARD ---
+// --- PUBLIC LANDING PAGE (THE SALES PITCH) ---
 app.get('/', (req, res) => {
   res.send(`
     <!DOCTYPE html>
@@ -291,26 +291,107 @@ app.get('/', (req, res) => {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Alert Air Wildfire Compliance</title>
+      <title>Alert Air | Wildfire Smoke Compliance</title>
       <script src="https://cdn.tailwindcss.com"></script>
     </head>
-    <body class="bg-slate-50 flex items-center justify-center min-h-screen">
-      <div class="text-center p-10 bg-white shadow-2xl rounded-2xl max-w-3xl border border-slate-100">
-        <div class="mb-6 inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-blue-600">
-          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+    <body class="bg-gray-50 text-gray-900 font-sans antialiased">
+      
+      <header class="bg-slate-900 text-white py-20 px-6 border-b-8 border-red-600">
+        <div class="max-w-4xl mx-auto text-center">
+          <h1 class="text-4xl md:text-6xl font-black mb-6 tracking-tight">Don’t Let a Smoke Audit Kill Your Government Bids.</h1>
+          <p class="text-xl md:text-2xl text-slate-300 font-medium mb-10 max-w-3xl mx-auto">
+            State OSHA agencies are hammering wildfire crews with surprise air quality inspections. One missing paper logbook can blacklist your business.
+          </p>
+          <a href="/login" class="inline-block bg-red-600 hover:bg-red-700 text-white font-bold text-lg py-4 px-10 rounded-lg shadow-lg transition-transform transform hover:scale-105">
+            Protect Your Crews Today
+          </a>
         </div>
-        <h1 class="text-5xl font-extrabold text-slate-900 mb-6 tracking-tight">Alert Air Wildfire Compliance</h1>
-        <p class="text-xl text-slate-600 mb-10 leading-relaxed">Automated AQI monitoring and zero-touch hazard alerts for your remote crews. Stay compliant. Keep them safe.</p>
-        <div class="flex justify-center gap-4">
-          <a href="/admin" class="bg-blue-600 text-white px-8 py-4 rounded-lg font-bold hover:bg-blue-700 transition shadow-lg hover:shadow-xl">Open Dashboard</a>
+      </header>
+
+      <section class="py-16 px-6 max-w-5xl mx-auto">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl font-black text-red-600 uppercase tracking-wide">The Warning Period is Over.</h2>
+          <p class="text-lg text-gray-600 mt-2 font-medium">Cal/OSHA and L&I are running targeted sweeps. They aren't handing out warnings anymore.</p>
         </div>
-      </div>
+
+        <div class="grid md:grid-cols-2 gap-8">
+          <div class="bg-white p-8 rounded-xl shadow-md border-t-4 border-red-500">
+            <h3 class="text-2xl font-black mb-4">The Financial Devastation</h3>
+            <ul class="space-y-4 text-gray-700 font-medium">
+              <li class="flex items-start">
+                <span class="text-red-500 mr-2">🚨</span>
+                <div><strong class="text-gray-900">$16,550 Fine:</strong> Missing the timestamped proof that you checked the AQI before a shift.</div>
+              </li>
+              <li class="flex items-start">
+                <span class="text-red-500 mr-2">🚨</span>
+                <div><strong class="text-gray-900">$165,514 Fine:</strong> Willful violations, like falsifying paper logs or failing repeat audits.</div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="bg-white p-8 rounded-xl shadow-md border-t-4 border-slate-800">
+            <h3 class="text-2xl font-black mb-4">The "Silent Debarment"</h3>
+            <p class="text-gray-700 font-medium mb-4">
+              Writing a $16,000 check hurts. Losing your USFS VIPR dispatch priority will bankrupt you.
+            </p>
+            <p class="text-gray-700 font-medium">
+              Agencies use your OSHA 300 log to determine if you are a "responsible bidder." If you have open smoke violations, dispatch centers simply move you to the bottom of the list. Your equipment sits in the yard all summer.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="bg-slate-200 py-16 px-6 border-y border-slate-300">
+        <div class="max-w-5xl mx-auto">
+          <h2 class="text-3xl font-black text-center mb-12">How Alert Air Protects You</h2>
+          <div class="grid md:grid-cols-3 gap-6 text-center">
+            <div class="bg-white p-6 rounded-lg shadow">
+              <div class="text-4xl mb-4">📡</div>
+              <h4 class="text-xl font-bold mb-2">Zero-Touch Tracking</h4>
+              <p class="text-gray-600 text-sm">We ping the official EPA API for your exact crew coordinates every hour. You never have to guess the AQI.</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow">
+              <div class="text-4xl mb-4">📱</div>
+              <h4 class="text-xl font-bold mb-2">Instant SMS Alerts</h4>
+              <p class="text-gray-600 text-sm">When the air hits state-mandated limits, your crew lead instantly gets a text to distribute N95 respirators.</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow border-2 border-green-500">
+              <div class="text-4xl mb-4">⚖️</div>
+              <h4 class="text-xl font-bold mb-2">Immutable Ledger</h4>
+              <p class="text-gray-600 text-sm">Crew leads sign off digitally. When the auditor shows up, you hand them a flawless cryptographic paper trail.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="py-20 px-6 max-w-3xl mx-auto text-center">
+        <h2 class="text-4xl font-black mb-6">Simple, Blue-Collar Pricing</h2>
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
+          <div class="bg-green-600 text-white py-6">
+            <span class="text-5xl font-black">$100</span>
+            <span class="text-xl font-medium">/ month per active crew</span>
+          </div>
+          <div class="p-8">
+            <ul class="text-left space-y-4 text-lg font-medium text-gray-700 w-fit mx-auto mb-8">
+              <li>✅ <strong class="text-gray-900">Zero Setup Fees.</strong> Up and running in 5 minutes.</li>
+              <li>✅ <strong class="text-gray-900">No Annual Contracts.</strong> Cancel anytime.</li>
+              <li>✅ <strong class="text-gray-900">Zero Off-Season Waste.</strong> Only pay for deployed crews. Demobilize them in the winter and your bill drops to $0.</li>
+            </ul>
+            <a href="/login" class="block w-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-xl py-4 rounded-lg shadow transition-colors">
+              Start Your 14-Day Free Trial
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <footer class="text-center py-8 text-gray-500 text-sm">
+        <p>&copy; 2026 Alert Air Wildfire Compliance. All rights reserved.</p>
+      </footer>
     </body>
     </html>
   `);
 });
 
-// 2. THE WORKER SIGN-OFF PORTAL (UPDATED WITH SIGNATURE)
 // 2. THE WORKER SIGN-OFF PORTAL (UPDATED WITH SIGNATURE)
 app.get('/signoff/:id', (req, res) => {
   const siteId = req.params.id;
