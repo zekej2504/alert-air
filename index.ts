@@ -621,7 +621,7 @@ res.send(`
                 <a href="/admin/audit" style="display: inline-block; background: #28a745; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 15px;">📜 View Audit Ledger</a>
                 
                 <!-- STRIPE BUTTON -->
-                <a href="YOUR_STRIPE_PAYMENT_LINK_HERE" target="_blank" style="display: inline-block; background: #6772e5; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 15px; margin-left: 10px;">💳 Start 14-Day Free Trial</a>
+                <a href="https://buy.stripe.com/fZu7sMgx34i7bDo4DHgrS00" target="_blank" style="display: inline-block; background: #6772e5; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 15px; margin-left: 10px;">💳 Start 14-Day Free Trial</a>
 
                 <!-- DEMOBILIZATION NOTICE -->
                 <div style="background: #e9ecef; padding: 15px; border-radius: 8px; margin-top: 20px; font-size: 14px; color: #495057; border-left: 4px solid #6c757d;">
