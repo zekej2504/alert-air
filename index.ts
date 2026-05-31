@@ -262,6 +262,35 @@ app.post('/api/worksite', async (req, res) => {
   res.redirect('/admin');
 });
 
+// --- TOGGLE WORKSITE STATUS (DEMOBILIZE) ---
+app.post('/api/worksite/:id/toggle', async (req, res) => {
+  try {
+    const worksiteId = req.params.id;
+    
+    // Find the current worksite in the database
+    const worksite = await prisma.worksite.findUnique({
+      where: { id: worksiteId }
+    });
+
+    if (!worksite) {
+      return res.status(404).send("Worksite not found.");
+    }
+
+    // Toggle the active status (flip true to false, or false to true)
+    await prisma.worksite.update({
+      where: { id: worksiteId },
+      data: { isActive: !worksite.isActive } 
+    });
+
+    // Refresh the dashboard automatically
+    res.redirect('/admin');
+    
+  } catch (error) {
+    console.error("Error toggling worksite status:", error);
+    res.status(500).send("<h2 style='color: red; text-align: center;'>Failed to update crew status.</h2>");
+  }
+});
+
 // --- UPDATE CREW API ---
 app.post('/api/worksite/:id/update-crew', async (req, res) => {
   if (!req.session.companyId) return res.redirect('/login');
