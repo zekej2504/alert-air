@@ -639,7 +639,7 @@ res.send(`
                 <h1 style="color: #0275d8; font-size: 26px; margin: 0; letter-spacing: -0.5px;">Alert Air Wildfire Compliance</h1>
                 <p style="color: #6c757d; margin-top: 6px; margin-bottom: 0; font-size: 15px; font-weight: 500;">Active Command Center</p>
                 
-                <a href="/admin/audit" style="display: inline-block; background: #28a745; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 15px;">📜 View Audit Ledger</a>
+
                 
                 <!-- STRIPE BUTTON -->
                 <!-- STRIPE BUTTON (HIDDEN FOR ACTIVE USERS) -->
