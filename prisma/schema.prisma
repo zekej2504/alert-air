@@ -36,10 +36,21 @@ model Worksite {
   companyId     String
   company       Company  @relation(fields: [companyId], references: [id])
 
-  // Your existing compliance links:
-  signoffs      ComplianceSignoff[]
+// Your existing compliance links:
+  signoffs       ComplianceSignoff[]
   airQualityLogs AirQualityLog[]
-  signOffs    SignOff[]
+  signOffs       SignOff[]
+  hourlyLogs     HourlyAirLog[]      // <-- Added this to link the new table!
+} // <-- This bracket completely closes the Worksite model
+
+model HourlyAirLog {
+  id             String   @id @default(uuid())
+  timestamp      DateTime @default(now())
+  worksiteId     String
+  worksite       Worksite @relation(fields: [worksiteId], references: [id], onDelete: Cascade)
+  aqi            Int
+  status         String   // "SAFE", "VOLUNTARY_LIMIT", or "MANDATORY_LIMIT"
+  lawThreshold   Int      // The exact regulatory cutoff at that moment
 }
 
 // --- EXISTING: Compliance Logs ---

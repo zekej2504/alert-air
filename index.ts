@@ -60,7 +60,6 @@ app.use(session({
 
 // --- THE AUTOMATED ENGINE (SIMULATION MODE) ---
 async function runAirQualityCheck() {
-  // 1. Get all active worksites and INCLUDE the company data (This fixes the admin errors!)
   const worksites = await prisma.worksite.findMany({
     where: { isActive: true },
     include: { company: true }
@@ -68,32 +67,41 @@ async function runAirQualityCheck() {
 
   for (const site of worksites) {
     try {
-      // 2. Fetch the specific state law
       const stateLaw = await prisma.stateRegulation.findUnique({
         where: { stateCode: site.state }
       });
 
-      // 3. Extract the dual-tier thresholds (Default to 151 if no law exists)
       const voluntaryLimit = stateLaw?.voluntaryAqi || 151;
       const mandatoryLimit = stateLaw?.mandatoryAqi || 9999; 
 
-      // 4. Ping the Weather API (Generating up to 300 so we can test mandatory limits)
+      // Simulate or fetch live AQI
       const liveAirNowAqi = Math.floor(Math.random() * (300 - 80 + 1) + 80);
       console.log(`📍 ${site.incidentName} (${site.state}): Live AQI is ${liveAirNowAqi}`);
 
-      // 5. Compare Live Weather against Dual-Tier Laws
-      let alertLevel = "";
+      // 1. Determine exact litigation status and threshold matched
+      let alertLevel = "SAFE";
+      let applicableThreshold = voluntaryLimit;
+
       if (liveAirNowAqi >= mandatoryLimit) {
         alertLevel = "MANDATORY";
+        applicableThreshold = mandatoryLimit;
       } else if (liveAirNowAqi >= voluntaryLimit) {
         alertLevel = "VOLUNTARY";
+        applicableThreshold = voluntaryLimit;
       }
 
-      // 6. Fire Alerts if a threshold is broken
-      if (alertLevel !== "") {
-        console.log(`⚠️ HAZARD DETECTED! Limit Exceeded. Logging API data...`);
-        console.log(`======================================================`);
+      // 2. PERMANENT RECORDARY INSULATION: Save every check to database
+      await prisma.hourlyAirLog.create({
+        data: {
+          worksiteId: site.id,
+          aqi: liveAirNowAqi,
+          status: alertLevel,
+          lawThreshold: applicableThreshold
+        }
+      });
 
+      // 3. Fire notification alerts ONLY if a threshold is broken
+      if (alertLevel !== "SAFE") {
         try {
           // SMS to Crew Lead
           await transporter.sendMail({
@@ -102,31 +110,22 @@ async function runAirQualityCheck() {
             subject: 'OSHA ALERT',
             text: `URGENT (${alertLevel}): AQI at ${site.incidentName} hit ${liveAirNowAqi}. N95 protocols triggered for ${site.company.name}. Sign off: https://alert-air-ezio.onrender.com/signoff/${site.id}`
           });
-          console.log(`✅ ZERO-COST SMS successfully sent to ${site.crewLeadName} at ${site.foremanPhone}${site.carrier}!`);
 
-          // SMS to Admin (CC)
+          // SMS to Admin
           if (site.company.adminPhone && site.company.adminCarrier) {
-            try {
-              await transporter.sendMail({
-                from: '"Alert Air Compliance" <ezekiel.grayson.johnson@gmail.com>',
-                to: `${site.company.adminPhone}${site.company.adminCarrier}`,
-                subject: 'ADMIN ALERT',
-                text: `ADMIN ALERT: Hazard detected at ${site.incidentName}. Crew lead ${site.crewLeadName} has been notified to distribute N95s. Awaiting signature.`
-              });
-              console.log(`✅ Admin CC'd at ${site.company.adminPhone}!`);
-            } catch (adminErr) {
-              console.log(`❌ Failed to send Admin SMS.`, adminErr);
-            }
+            await transporter.sendMail({
+              from: '"Alert Air Compliance" <ezekiel.grayson.johnson@gmail.com>',
+              to: `${site.company.adminPhone}${site.company.adminCarrier}`,
+              subject: 'ADMIN ALERT',
+              text: `ADMIN ALERT: Hazard detected at ${site.incidentName}. Awaiting signature.`
+            });
           }
         } catch (emailError) {
-          console.log(`❌ Failed to send gateway SMS:`, emailError);
+          console.error(`❌ Failed to send gateway SMS:`, emailError);
         }
-        console.log(`======================================================\n`);
-      } else {
-        console.log(`✅ Safe conditions. No action required.`);
       }
     } catch (error) {
-      console.log(`❌ Failed to process site ${site.incidentName}.`);
+      console.error(`❌ Failed to process site ${site.incidentName}:`, error);
     }
   }
 }
@@ -637,13 +636,11 @@ res.send(`
             <div style="background: white; padding: 3rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
               <div style="border-bottom: 2px solid #eee; padding-bottom: 1rem; margin-bottom: 2rem;">
                 <h1 style="color: #0275d8; font-size: 26px; margin: 0; letter-spacing: -0.5px;">Alert Air Wildfire Compliance</h1>
-                <p style="color: #6c757d; margin-top: 6px; margin-bottom: 0; font-size: 15px; font-weight: 500;">Active Command Center</p>
+<p style="color: #6c757d; margin-top: 6px; margin-bottom: 0; font-size: 15px; font-weight: 500;">Active Command Center</p>
                 
+<a href="/admin/litigation-records" style="display: inline-block; color: #2563eb; font-weight: bold; font-size: 14px; text-decoration: underline; margin-top: 15px; margin-bottom: 10px;">🛡️ Access Litigation-Grade Audit Logs</a>
 
-                
-                <!-- STRIPE BUTTON -->
-                <!-- STRIPE BUTTON (HIDDEN FOR ACTIVE USERS) -->
-${worksites.length === 0 ? 
+${worksites.length === 0 ?
   `<a href="https://buy.stripe.com/fZu7sMgx34i7bDo4DHgrS00" target="_blank" style="display: inline-block; background: #6772e5; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 15px; margin-left: 10px;">💳 Start 14-Day Free Trial</a>` 
 : ``}
 
@@ -933,6 +930,130 @@ app.get('/admin/worksite/:id/logs', async (req, res) => {
   } catch (error) {
     console.error("Error loading logs page:", error);
     res.status(500).send("Error loading audit ledger.");
+  }
+});// --- TABBED LITIGATION REPOSITORY ---
+app.get('/admin/litigation-records', async (req, res) => {
+  if (!req.session.companyId) return res.redirect('/login');
+
+  try {
+    // Fetch all hourly air logs for this company's active/past worksites
+    const worksites = await prisma.worksite.findMany({
+      where: { companyId: req.session.companyId },
+      include: {
+        hourlyLogs: { orderBy: { timestamp: 'desc' } }
+      }
+    });
+
+    // Flatten logs down into categorical arrays
+    const allLogs = worksites.flatMap(site => 
+      site.hourlyLogs.map(log => ({ ...log, incidentName: site.incidentName, state: site.state }))
+    ).sort((a,b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+    const dynamicExceedingRows = allLogs
+      .filter(l => l.status !== 'SAFE')
+      .map(l => `
+        <tr style="border-bottom: 1px solid #e2e8f0;">
+          <td style="padding: 12px 16px;">${new Date(l.timestamp).toLocaleString()}</td>
+          <td style="padding: 12px 16px;"><strong>${l.incidentName} (${l.state})</strong></td>
+          <td style="padding: 12px 16px; color: #dc2626; font-weight: bold;">${l.aqi} AQI</td>
+          <td style="padding: 12px 16px;"><span style="background: #fef2f2; color: #991b1b; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${l.status} EXCEEDED</span></td>
+          <td style="padding: 12px 16px; color: #64748b;">Threshold: ${l.lawThreshold} AQI</td>
+        </tr>
+      `).join('');
+
+    const dynamicSafeRows = allLogs
+      .filter(l => l.status === 'SAFE')
+      .map(l => `
+        <tr style="border-bottom: 1px solid #e2e8f0;">
+          <td style="padding: 12px 16px;">${new Date(l.timestamp).toLocaleString()}</td>
+          <td style="padding: 12px 16px;"><strong>${l.incidentName} (${l.state})</strong></td>
+          <td style="padding: 12px 16px; color: #16a34a; font-weight: bold;">${l.aqi} AQI</td>
+          <td style="padding: 12px 16px;"><span style="background: #f0fdf4; color: #166534; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">DUTY VERIFIED</span></td>
+          <td style="padding: 12px 16px; color: #64748b;">Below Limit (${l.lawThreshold})</td>
+        </tr>
+      `).join('');
+
+    res.send(`
+      <html>
+        <head>
+          <title>Litigation-Grade Audit Logs</title>
+          <script src="https://cdn.tailwindcss.com"></script>
+        </head>
+        <body class="bg-slate-50 p-8 font-sans text-slate-800">
+          <div class="max-w-5xl mx-auto">
+            <div class="flex justify-between items-center mb-8">
+              <div>
+                <h1 class="text-3xl font-black text-slate-900">🛡️ Litigation Defense Ledger</h1>
+                <p class="text-slate-500 mt-1">Immutable record of statutory duty-of-care verification checks.</p>
+              </div>
+              <a href="/admin" class="bg-slate-800 text-white font-bold px-4 py-2 rounded-lg hover:bg-slate-700 transition">&larr; Back to Dashboard</a>
+            </div>
+
+            <!-- Tab Navigation Headers -->
+            <div class="flex border-b border-slate-200 mb-6 gap-2">
+              <button onclick="switchTab('exceeding')" id="tab-exceeding" class="py-3 px-6 font-bold text-sm border-b-2 border-blue-600 text-blue-600 outline-none transition">
+                ⚠️ Exceeded Thresholds (${allLogs.filter(l => l.status !== 'SAFE').length})
+              </button>
+              <button onclick="switchTab('safe')" id="tab-safe" class="py-3 px-6 font-bold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 outline-none transition">
+                ✅ Verified Safe Checks (${allLogs.filter(l => l.status === 'SAFE').length})
+              </button>
+            </div>
+
+            <!-- EXCEEDING TAB GRID -->
+            <div id="panel-exceeding" class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-100 text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
+                    <th class="p-4">Timestamp</th><th class="p-4">Incident</th><th class="p-4">Recorded AQI</th><th class="p-4">Status</th><th class="p-4">Statutory Limit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${dynamicExceedingRows || '<tr><td colspan="5" class="p-8 text-center text-slate-400 italic">No threshold excursions on record.</td></tr>'}
+                </tbody>
+              </table>
+            </div>
+
+            <!-- SAFE TAB GRID (HIDDEN BY DEFAULT) -->
+            <div id="panel-safe" class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200 hidden">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-100 text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
+                    <th class="p-4">Timestamp</th><th class="p-4">Incident</th><th class="p-4">Recorded AQI</th><th class="p-4">Status</th><th class="p-4">Statutory Limit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${dynamicSafeRows || '<tr><td colspan="5" class="p-8 text-center text-slate-400 italic">No historical safe pings registered yet.</td></tr>'}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <script>
+            function switchTab(target) {
+              const tabExceeding = document.getElementById('tab-exceeding');
+              const tabSafe = document.getElementById('tab-safe');
+              const panelExceeding = document.getElementById('panel-exceeding');
+              const panelSafe = document.getElementById('panel-safe');
+
+              if(target === 'exceeding') {
+                tabExceeding.className = "py-3 px-6 font-bold text-sm border-b-2 border-blue-600 text-blue-600 outline-none transition";
+                tabSafe.className = "py-3 px-6 font-bold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 outline-none transition";
+                panelExceeding.classList.remove('hidden');
+                panelSafe.classList.add('hidden');
+              } else {
+                tabSafe.className = "py-3 px-6 font-bold text-sm border-b-2 border-blue-600 text-blue-600 outline-none transition";
+                tabExceeding.className = "py-3 px-6 font-bold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 outline-none transition";
+                panelSafe.classList.remove('hidden');
+                panelExceeding.classList.add('hidden');
+              }
+            }
+          </script>
+        </body>
+      </html>
+    `);
+  } catch (error) {
+    console.error("Litigation Ledger Error:", error);
+    res.status(500).send("Failed to build audit records.");
   }
 });
 
