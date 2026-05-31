@@ -619,6 +619,9 @@ res.send(`
                 <p style="color: #6c757d; margin-top: 6px; margin-bottom: 0; font-size: 15px; font-weight: 500;">Active Command Center</p>
                 
                 <a href="/admin/audit" style="display: inline-block; background: #28a745; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 15px;">📜 View Audit Ledger</a>
+                
+                <!-- NEW STRIPE BUTTON BELOW -->
+                <a href="YOUR_STRIPE_PAYMENT_LINK_HERE" target="_blank" style="display: inline-block; background: #6772e5; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 15px; margin-left: 10px;">💳 Start 14-Day Free Trial</a>
               </div>
               
               <div style="overflow-x: auto; width: 100%;">
