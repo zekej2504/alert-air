@@ -586,17 +586,9 @@ app.get('/admin', async (req, res) => {
             <button type="submit" style="background: ${buttonColor}; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">${toggleAction}</button>
           </form>
         </td>
-<td style="padding: 16px; color: #555; font-size: 13px; max-width: 250px;">
-          ${site.signOffs.length === 0 
-            ? '<span style="color: #dc3545; font-weight: bold;">⚠️ Pending</span>' 
-            : site.signOffs.map(sig => `
-                <div style="margin-bottom: 4px;">
-                  ✅ <strong>${sig.signature}</strong><br>
-                  <span style="font-size: 11px; color: #888;">${new Date(sig.timestamp).toLocaleString()}</span>
-                </div>
-              `).join('<hr style="border: 0; border-top: 1px solid #eee; margin: 8px 0;">')
-          }
-        </td>
+<td style="padding: 15px 16px; vertical-align: top;">
+  <a href="/admin/worksite/${site.id}/logs" style="display: inline-block; background: #3b82f6; color: white; padding: 8px 14px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 13px; box-shadow: 0 2px 4px rgba(59,130,246,0.3);">🔍 View Log History</a>
+</td>
       </tr>
     `;
   }).join('');
@@ -669,7 +661,7 @@ ${worksites.length === 0 ?
                       <th style="padding: 12px 16px;">STATUS</th>
                       <th style="padding: 12px 16px;">CREW LEAD DETAILS</th>
                       <th style="padding: 12px 16px;">ACTIONS</th>
-                      <th style="padding: 12px 16px;">COMPLIANCE LOGS</th>
+                      <th style="padding: 12px 16px;">AUDIT TRAIL</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -876,6 +868,71 @@ app.get('/admin/audit', async (req, res) => {
   } catch (error) {
     console.error("Audit Ledger Error:", error);
     res.status(500).send("<h2 style='color: red; text-align: center;'>Failed to load the Audit Ledger.</h2>");
+  }
+});
+
+// --- DEEP DIVE AUDIT LEDGER PAGE ---
+app.get('/admin/worksite/:id/logs', async (req, res) => {
+  // 1. Security Check
+  if (!req.session.companyId) {
+    return res.redirect('/login');
+  }
+
+  try {
+    // 2. Fetch the specific worksite and all of its compliance sign-offs
+    const worksite = await prisma.worksite.findUnique({
+      where: { id: req.params.id },
+      include: { 
+        signOffs: { orderBy: { timestamp: 'desc' } } 
+      }
+    });
+
+    if (!worksite) {
+      return res.status(404).send("Worksite not found.");
+    }
+
+// 3. Build the individual HTML cards for each log
+    const logCards = worksite.signOffs.map(log => `
+      <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 12px;">
+          <strong style="color: #10b981; font-size: 18px;">✅ Verified Compliant</strong>
+          <span style="color: #64748b; font-size: 14px; font-weight: 500;">${new Date(log.timestamp).toLocaleString()}</span>
+        </div>
+        <div style="color: #334155; font-size: 15px; line-height: 1.6; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div><strong>Signatory:</strong> ${log.signature || worksite.crewLeadName}</div>
+          <div><strong>Phone:</strong> ${worksite.foremanPhone}</div>
+          <div><strong>AQI at Time of Alert:</strong> <span style="color: #eab308; font-weight: bold;">Threshold Exceeded</span></div>
+          <div><strong>Coordinates:</strong> ${worksite.latitude}, ${worksite.longitude}</div>
+          <div style="grid-column: 1 / -1; margin-top: 8px; background: #f8fafc; padding: 10px; border-radius: 6px; border-left: 3px solid #3b82f6;">
+            <strong>Mandate Enforced:</strong> N95 Respirators Distributed & Mandatory Work/Rest Cycles Initiated.
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    // 4. Send the Full Page HTML
+    res.send(`
+      <html>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f7f6; padding: 3rem; color: #333; margin: 0;">
+          <div style="max-width: 800px; margin: 0 auto;">
+            <a href="/admin" style="display: inline-block; text-decoration: none; color: #3b82f6; font-weight: bold; margin-bottom: 20px;">&larr; Back to Command Center</a>
+            
+            <div style="background: white; padding: 3rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+              <h1 style="color: #0f172a; margin-top: 0; font-size: 28px;">Immutable Audit Ledger</h1>
+              <p style="color: #64748b; font-size: 16px; margin-top: 5px;"><strong>Incident:</strong> ${worksite.incidentName} | <strong>Status:</strong> ${worksite.isActive ? '🟢 Active' : '⚪ Demobilized'}</p>
+              
+              <hr style="border: none; border-top: 2px solid #f1f5f9; margin: 30px 0;">
+              
+              <h3 style="color: #475569; margin-bottom: 20px;">Timestamped Sign-Offs</h3>
+              ${logCards.length > 0 ? logCards : '<p style="color: #94a3b8; font-style: italic; background: #f8fafc; padding: 20px; border-radius: 8px; text-align: center;">No compliance signatures recorded for this unit yet.</p>'}
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+  } catch (error) {
+    console.error("Error loading logs page:", error);
+    res.status(500).send("Error loading audit ledger.");
   }
 });
 
