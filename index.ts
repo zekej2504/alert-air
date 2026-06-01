@@ -393,7 +393,7 @@ app.get('/', (req, res) => {
       </section>
 
       <section class="py-20 px-6 max-w-3xl mx-auto text-center">
-        <h2 class="text-4xl font-black mb-6">Simple, Blue-Collar Pricing</h2>
+        <h2 class="text-4xl font-black mb-6">Simple, No-Nonsense Pricing</h2>
         <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
           <div class="bg-green-600 text-white py-6">
             <span class="text-5xl font-black">$100</span>
@@ -633,12 +633,16 @@ res.send(`
               </form>
             </div>
 
-            <div style="background: white; padding: 3rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
-              <div style="border-bottom: 2px solid #eee; padding-bottom: 1rem; margin-bottom: 2rem;">
-                <h1 style="color: #0275d8; font-size: 26px; margin: 0; letter-spacing: -0.5px;">Alert Air Wildfire Compliance</h1>
-<p style="color: #6c757d; margin-top: 6px; margin-bottom: 0; font-size: 15px; font-weight: 500;">Active Command Center</p>
+           <div style="border-bottom: 2px solid #eee; padding-bottom: 1.5rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div>
+                  <h1 style="color: #0275d8; font-size: 26px; margin: 0; letter-spacing: -0.5px;">Alert Air Wildfire Compliance</h1>
+                  <p style="color: #6c757d; margin-top: 6px; margin-bottom: 0; font-size: 15px; font-weight: 500;">Active Command Center</p>
+                </div>
                 
-<a href="/admin/litigation-records" style="display: inline-block; color: #2563eb; font-weight: bold; font-size: 14px; text-decoration: underline; margin-top: 15px; margin-bottom: 10px;">🛡️ Access Litigation-Grade Audit Logs</a>
+                <a href="/admin/litigation-records" style="display: inline-block; background: #1e293b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #0f172a;">
+                  🏛️ Master Compliance Archive
+                </a>
+              </div>
 
 ${worksites.length === 0 ?
   `<a href="https://buy.stripe.com/fZu7sMgx34i7bDo4DHgrS00" target="_blank" style="display: inline-block; background: #6772e5; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 15px; margin-left: 10px;">💳 Start 14-Day Free Trial</a>` 
