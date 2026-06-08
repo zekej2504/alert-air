@@ -12,8 +12,8 @@ import nodemailer from 'nodemailer';
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'ezekiel.grayson.johnson@gmail.com', // <-- 1. Type your real Gmail address here
-    pass: 'qjnw rjxh awth ecga'   // <-- 2. Paste your 16-letter App Password here
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
   }
 });
 
@@ -53,9 +53,10 @@ app.use(express.urlencoded({ extended: true }));
 
 // --- SECURITY MIDDLEWARE ---
 app.use(session({
-  secret: 'osha-super-secret-key-2026', // In production, this goes in your .env file
+  secret: process.env.SESSION_SECRET || 'fallback-secret-key',
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: false,
+  // ...
 }));
 
 // --- THE AUTOMATED ENGINE (SIMULATION MODE) ---
