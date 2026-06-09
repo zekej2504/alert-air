@@ -293,25 +293,26 @@ app.post('/api/worksite', async (req, res) => {
 
 // --- TOGGLE WORKSITE STATUS (DEMOBILIZE) ---
 app.post('/api/worksite/:id/toggle', async (req, res) => {
+  if (!req.session.companyId) return res.redirect('/login');
+
   try {
     const worksiteId = req.params.id;
     
-    // Find the current worksite in the database
+    // Find the current worksite and verify ownership
     const worksite = await prisma.worksite.findUnique({
       where: { id: worksiteId }
     });
 
-    if (!worksite) {
-      return res.status(404).send("Worksite not found.");
+    if (!worksite || worksite.companyId !== req.session.companyId) {
+      return res.status(403).send("Unauthorized access.");
     }
 
-    // Toggle the active status (flip true to false, or false to true)
+    // Toggle the active status
     await prisma.worksite.update({
       where: { id: worksiteId },
       data: { isActive: !worksite.isActive } 
     });
 
-    // Refresh the dashboard automatically
     res.redirect('/admin');
     
   } catch (error) {
@@ -845,13 +846,25 @@ app.post('/api/signoff', async (req, res) => {
 
 // --- THE IMMUTABLE AUDIT LEDGER ---
 app.get('/admin/audit', async (req, res) => {
+  // SECURITY BOUNCER: Kick them to login if they aren't authenticated
+  if (!req.session.companyId) return res.redirect('/login');
+
   try {
-    // 1. Fetch all sign-offs directly
+    // 1. Fetch worksites specifically owned by this logged-in company
+    const myWorksites = await prisma.worksite.findMany({
+      where: { companyId: req.session.companyId },
+      select: { id: true }
+    });
+    
+    const myWorksiteIds = myWorksites.map(ws => ws.id);
+
+    // 2. Fetch only the sign-offs belonging to those specific worksites
     const logs = await prisma.complianceSignoff.findMany({
+      where: { worksiteId: { in: myWorksiteIds } },
       orderBy: { createdAt: 'desc' } // Newest signatures first
     });
 
-    // 2. Build the secure paper trail table by manually looking up the worksite
+    // 3. Build the secure paper trail table by manually looking up the worksite
     let tableRows = "";
     for (const log of logs) {
       const worksite = await prisma.worksite.findUnique({
@@ -870,7 +883,7 @@ app.get('/admin/audit', async (req, res) => {
       `;
     }
 
-    // 3. Render the Dashboard
+    // 4. Render the Dashboard
     res.send(`
       <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 1000px; margin: 40px auto; padding: 20px;">
         <h1 style="color: #111; margin-bottom: 5px;">⚖️ Compliance Audit Ledger</h1>
