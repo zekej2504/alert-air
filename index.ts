@@ -189,9 +189,9 @@ app.get('/signup', (req, res) => {
       <body style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
         <div style="background: white; padding: 3rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); width: 320px; text-align: center;">
           <div style="text-align: center; margin-bottom: 2rem;">
-  <h1 style="color: #0275d8; font-size: 22px; margin: 0; letter-spacing: -0.5px;">Alert Air Wildfire Compliance</h1>
-  <p style="color: #6c757d; margin-top: 8px; margin-bottom: 0; font-size: 14px; font-weight: 500;">Contractor Registration</p>
-</div>
+            <h1 style="color: #0275d8; font-size: 22px; margin: 0; letter-spacing: -0.5px;">Alert Air Wildfire Compliance</h1>
+            <p style="color: #6c757d; margin-top: 8px; margin-bottom: 0; font-size: 14px; font-weight: 500;">Contractor Registration</p>
+          </div>
           <form action="/signup" method="POST" style="display: flex; flex-direction: column; gap: 1.5rem;">
             <input type="text" name="companyName" placeholder="Company Name" required style="padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
             <input type="email" name="email" placeholder="Admin Email" required style="padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
@@ -203,9 +203,103 @@ app.get('/signup', (req, res) => {
               <option value="@txt.att.net">AT&T</option>
               <option value="@tmomail.net">T-Mobile</option>
             </select>
-            <button type="submit" style="background: #5cb85c; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1rem;">Create Account</button>
+
+            <div style="display: flex; align-items: flex-start; gap: 0.5rem; text-align: left;">
+              <input 
+                type="checkbox" 
+                id="tos-checkbox" 
+                name="tosAccepted" 
+                value="true" 
+                required 
+                style="margin-top: 3px; cursor: pointer;" 
+                onchange="toggleSubmitButton()"
+              >
+              <label for="tos-checkbox" style="font-size: 12px; color: #6c757d; line-height: 1.4; cursor: pointer; user-select: none;">
+                I represent the corporate subscriber and explicitly agree to Alert Air's 
+                <a href="/terms" target="_blank" style="color: #0275d8; text-decoration: none; font-weight: bold;">Terms of Service</a> and 
+                <a href="/privacy" target="_blank" style="color: #0275d8; text-decoration: none; font-weight: bold;">Privacy Policy</a>, 
+                including Third-Party Data Accuracy Disclaimers.
+              </label>
+            </div>
+
+            <button 
+              type="submit" 
+              id="signup-btn" 
+              disabled 
+              style="background: #a0a0a0; color: white; border: none; padding: 12px; border-radius: 6px; cursor: not-allowed; font-weight: bold; font-size: 1rem; transition: background 0.2s ease;"
+            >
+              Create Account
+            </button>
           </form>
           <p style="margin-top: 1.5rem; font-size: 14px; color: #666;">Already registered? <a href="/login" style="color: #0275d8; text-decoration: none; font-weight: bold;">Login here</a></p>
+        </div>
+
+        <script>
+          function toggleSubmitButton() {
+            const checkbox = document.getElementById('tos-checkbox');
+            const submitBtn = document.getElementById('signup-btn');
+            if (checkbox.checked) {
+              submitBtn.disabled = false;
+              submitBtn.style.background = '#5cb85c';
+              submitBtn.style.cursor = 'pointer';
+            } else {
+              submitBtn.disabled = true;
+              submitBtn.style.background = '#a0a0a0';
+              submitBtn.style.cursor = 'not-allowed';
+            }
+          }
+        </script>
+      </body>
+    </html>
+  `);
+});
+
+// ⚖️ LEGAL TERMS OF SERVICE ROUTE
+app.get('/terms', (req, res) => {
+  res.send(`
+    <html>
+      <head>
+        <title>Terms of Service - Alert Air</title>
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #333; background: #f8fafc; padding: 3rem 1rem; margin: 0; display: flex; justify-content: center;">
+        <div style="background: white; padding: 3rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); max-width: 650px; width: 100%;">
+          
+          <h1 style="color: #0f172a; font-size: 28px; margin-top: 0; margin-bottom: 0.5rem; letter-spacing: -0.5px;">Terms of Service</h1>
+          <p style="color: #64748b; font-size: 14px; margin-top: 0; margin-bottom: 2rem;">Last Updated: June 2026</p>
+          
+          <div style="font-size: 15px; color: #334155; display: flex; flex-direction: column; gap: 1.5rem;">
+            
+            <section>
+              <h2 style="color: #1e3a8a; font-size: 18px; margin-bottom: 0.5rem;">1. Nature of the Service</h2>
+              <p style="margin: 0;">Alert Air provides data aggregation, tracking, and compliance record-keeping software. The platform is designed to assist corporate subscribers in monitoring air quality metrics at designated worksites. Alert Air does not provide professional occupational safety, medical, or legal counsel.</p>
+            </section>
+
+            <section>
+              <h2 style="color: #1e3a8a; font-size: 18px; margin-bottom: 0.5rem;">2. Reliance on Third-Party Environmental Data</h2>
+              <p style="margin: 0;">Subscriber acknowledges that Alert Air aggregates real-time air quality index (AQI) readings from public, third-party environmental monitoring feeds (including but not limited to the EPA and regional regulatory agencies). Alert Air makes no warranties, express or implied, regarding the accuracy, completeness, calibration, or real-time delivery performance of these external feeds.</p>
+            </section>
+
+            <section>
+              <h2 style="color: #1e3a8a; font-size: 18px; margin-bottom: 0.5rem;">3. Ultimate Statutory Responsibility</h2>
+              <p style="margin: 0;">The subscriber retains sole, non-delegable statutory responsibility for evaluating physical hazards, ensuring on-site workplace safety, implementing mandatory labor protections, and fully complying with all state, federal, or OSHA standards. Missed, delayed, or unreceived platform notifications shall not alleviate subscriber of this legal obligation.</p>
+            </section>
+
+            <section>
+              <h2 style="color: #1e3a8a; font-size: 18px; margin-bottom: 0.5rem;">4. Limitation of Liability</h2>
+              <p style="margin: 0; font-weight: 500;">To the maximum extent permitted by applicable law, in no event shall Alert Air be liable for any consequential, incidental, indirect, special, or punitive damages whatsoever—including but not limited to regulatory fines, OSHA citations, project delays, or toxic exposure personal injury claims—arising out of the use or inability to use the platform. Alert Air's total aggregate liability under this agreement shall be strictly capped at the amount actually paid by the subscriber to Alert Air during the preceding three (3) months.</p>
+            </section>
+
+            <section>
+              <h2 style="color: #1e3a8a; font-size: 18px; margin-bottom: 0.5rem;">5. Indemnification</h2>
+              <p style="margin: 0;">Subscriber agrees to indemnify, defend, and hold harmless Alert Air and its developers from and against any and all claims, liabilities, losses, administrative penalties, civil fines, or legal expenses (including attorneys' fees) resulting from or arising out of subscriber's on-site operations, field employment practices, or failure to implement proper safety protocols during recorded air quality threshold excursions.</p>
+            </section>
+
+          </div>
+          
+          <div style="margin-top: 3rem; border-top: 1px solid #e2e8f0; padding-top: 1.5rem; text-align: center;">
+            <button onclick="window.close();" style="background: #0275d8; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px;">Close Window</button>
+          </div>
+
         </div>
       </body>
     </html>
@@ -213,31 +307,40 @@ app.get('/signup', (req, res) => {
 });
 
 app.post('/signup', async (req, res) => {
-  const { companyName, email, password, adminPhone, adminCarrier } = req.body;
+  const { companyName, email, password, adminPhone, adminCarrier, tosAccepted } = req.body;
 
-  // 1. Check if the email is already taken
+  // 1. Strict Legal Guardrail: Enforce checkbox verification server-side
+  if (tosAccepted !== 'true') {
+    return res.send("<h2 style='text-align:center; margin-top:2rem; font-family:sans-serif;'>❌ You must review and accept the Terms of Service to register. <a href='/signup'>Go back</a></h2>");
+  }
+
+  // 2. Check if the email is already taken
   const existingCompany = await prisma.company.findUnique({ where: { contact: email } });
   if (existingCompany) {
     return res.send("<h2 style='text-align:center; margin-top:2rem; font-family:sans-serif;'>❌ Email already in use. <a href='/login'>Login</a></h2>");
   }
 
-  // 2. Cryptographically hash the password (salt 10 rounds)
+  // 3. Cryptographically hash the password (salt 10 rounds)
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  // 3. Save the new company with the protected password
+  // 4. Save the new company along with the immutable legal audit trail properties
   const newCompany = await prisma.company.create({
     data: {
       name: companyName,
       contact: email,
       password: hashedPassword,
       adminPhone: adminPhone,
-      adminCarrier: adminCarrier
+      adminCarrier: adminCarrier,
+      
+      // Commit the explicit legal sign-off signature details
+      tosAccepted: true,
+      tosAcceptedAt: new Date()
     }
   });
 
-  // 4. Log them in instantly and send them to the dashboard
+  // 5. Log them in instantly and send them to the dashboard
   req.session.companyId = newCompany.id;
-  res.redirect('/admin');
+  res.redirect('/admin/litigation-records');
 });
 
 // --- THE LOGIN PORTAL ---
@@ -247,9 +350,9 @@ app.get('/login', (req, res) => {
       <body style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
         <div style="background: white; padding: 3rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); width: 320px; text-align: center;">
           <div style="text-align: center; margin-bottom: 2rem;">
-  <h1 style="color: #0275d8; font-size: 22px; margin: 0; letter-spacing: -0.5px;">Alert Air Wildfire Compliance</h1>
-  <p style="color: #6c757d; margin-top: 8px; margin-bottom: 0; font-size: 14px; font-weight: 500;">Secure Portal Login</p>
-</div>
+            <h1 style="color: #0275d8; font-size: 22px; margin: 0; letter-spacing: -0.5px;">Alert Air Wildfire Compliance</h1>
+            <p style="color: #6c757d; margin-top: 8px; margin-bottom: 0; font-size: 14px; font-weight: 500;">Secure Portal Login</p>
+          </div>
           <form action="/login" method="POST" style="display: flex; flex-direction: column; gap: 1.5rem;">
             <input type="email" name="email" placeholder="Admin Email" required style="padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
             <input type="password" name="password" placeholder="Password" required style="padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">

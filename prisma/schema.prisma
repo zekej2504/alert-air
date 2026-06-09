@@ -19,6 +19,9 @@ model Company {
   adminPhone   String?    // <-- NEW: Admin text number
   adminCarrier String?    // <-- NEW: Admin text carrier
   worksites    Worksite[] 
+  // ⚖️ Legal Auditing Fields
+  tosAccepted   Boolean   @default(false)
+  tosAcceptedAt DateTime?
 }
 
 // --- UPDATED: The Worksite Model ---
