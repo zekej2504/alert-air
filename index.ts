@@ -137,7 +137,7 @@ async function runAirQualityCheck() {
         try {
           // SMS to Crew Lead
           await transporter.sendMail({
-            from: '"Alert Air Compliance" <ezekiel.grayson.johnson@gmail.com>',
+            from: '"Alert Air Compliance" <compliance.alertair@gmail.com>',
             to: `${site.foremanPhone}${site.carrier}`,
             subject: 'OSHA ALERT',
             text: `URGENT (${alertLevel}): AQI at ${site.incidentName} hit ${liveAirNowAqi}. N95 protocols triggered for ${site.company.name}. Sign off: https://alert-air-ezio.onrender.com/signoff/${site.id}`
@@ -146,7 +146,7 @@ async function runAirQualityCheck() {
           // SMS to Admin
           if (site.company.adminPhone && site.company.adminCarrier) {
             await transporter.sendMail({
-              from: '"Alert Air Compliance" <ezekiel.grayson.johnson@gmail.com>',
+              from: '"Alert Air Compliance" <compliance.alertair@gmail.com',
               to: `${site.company.adminPhone}${site.company.adminCarrier}`,
               subject: 'ADMIN ALERT',
               text: `ADMIN ALERT: Hazard detected at ${site.incidentName}. Awaiting signature.`
@@ -561,7 +561,7 @@ try {
     if (site && site.company.adminPhone && site.company.adminCarrier) {
       try {
         await transporter.sendMail({
-          from: '"Alert Air Compliance" <ezekiel.grayson.johnson@gmail.com>',
+          from: '"Alert Air Compliance" <compliance.alertair@gmail.com>',
           to: `${site.company.adminPhone}${site.company.adminCarrier}`,
           subject: 'COMPLIANCE SECURED',
           text: `COMPLIANCE SECURED: Crew lead ${signature} has officially signed off on N95 distribution for ${site.incidentName}.`
