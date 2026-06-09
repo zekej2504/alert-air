@@ -75,9 +75,24 @@ async function runAirQualityCheck() {
       const voluntaryLimit = stateLaw?.voluntaryAqi || 151;
       const mandatoryLimit = stateLaw?.mandatoryAqi || 9999; 
 
-      // Simulate or fetch live AQI
-      const liveAirNowAqi = Math.floor(Math.random() * (300 - 80 + 1) + 80);
-      console.log(`📍 ${site.incidentName} (${site.state}): Live AQI is ${liveAirNowAqi}`);
+      // 1. Fetch Real Live AQI from the US Government API
+      let liveAirNowAqi = 0; 
+      
+      try {
+        const airNowUrl = `https://www.airnowapi.org/aq/observation/latLong/current/?format=application/json&latitude=${site.latitude}&longitude=${site.longitude}&distance=50&API_KEY=${process.env.AIRNOW_API_KEY}`;
+        const airNowResponse = await axios.get(airNowUrl);
+        
+        // AirNow returns an array of different pollutants. We isolate the highest AQI number.
+        if (airNowResponse.data && airNowResponse.data.length > 0) {
+           liveAirNowAqi = Math.max(...airNowResponse.data.map((reading: any) => reading.AQI));
+        } else {
+           console.log(`⚠️ AirNow returned no data for coordinates ${site.latitude}, ${site.longitude}.`);
+           continue; 
+        }
+      } catch (apiError: any) {
+        console.error(`❌ AirNow API connection failed for ${site.incidentName}:`, apiError.message);
+        continue; 
+      }
 
       // 1. Determine exact litigation status and threshold matched
       let alertLevel = "SAFE";
@@ -91,6 +106,13 @@ async function runAirQualityCheck() {
         applicableThreshold = voluntaryLimit;
       }
 
+      // --- THE ANTI-SPAM CHECK (EDGE TRIGGERING) ---
+      // Look up the most recent log for this exact worksite before we save the new one
+      const lastLog = await prisma.hourlyAirLog.findFirst({
+        where: { worksiteId: site.id },
+        orderBy: { timestamp: 'desc' } // Gets the most recent entry
+      });
+
       // 2. PERMANENT RECORDARY INSULATION: Save every check to database
       await prisma.hourlyAirLog.create({
         data: {
@@ -101,8 +123,12 @@ async function runAirQualityCheck() {
         }
       });
 
-      // 3. Fire notification alerts ONLY if a threshold is broken
-      if (alertLevel !== "SAFE") {
+      // --- ESCALATION LOGIC ---
+      // We only want to send a text if the alert level is dangerous AND it is a newly escalated status
+      const isNewEscalation = !lastLog || lastLog.status !== alertLevel;
+
+      // 3. Fire notification alerts ONLY if a threshold is broken AND it just changed
+      if (alertLevel !== "SAFE" && isNewEscalation) {
         try {
           // SMS to Crew Lead
           await transporter.sendMail({
@@ -124,6 +150,9 @@ async function runAirQualityCheck() {
         } catch (emailError) {
           console.error(`❌ Failed to send gateway SMS:`, emailError);
         }
+      } else if (alertLevel !== "SAFE" && !isNewEscalation) {
+        // Silently log that we suppressed a duplicate text
+        console.log(`🔇 Suppressed duplicate text for ${site.incidentName}. Status remains ${alertLevel}.`);
       }
     } catch (error) {
       console.error(`❌ Failed to process site ${site.incidentName}:`, error);
