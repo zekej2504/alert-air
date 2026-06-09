@@ -1091,19 +1091,26 @@ app.get('/admin/litigation-records', async (req, res) => {
           <script src="https://cdn.tailwindcss.com"></script>
         </head>
         <body class="bg-slate-50 p-8 font-sans text-slate-800">
-          <div class="max-w-5xl mx-auto">
-            <div class="flex justify-between items-center mb-8">
+<div class="max-w-5xl mx-auto">
+            <div class="flex justify-between items-center mb-6">
               <div>
                 <h1 class="text-3xl font-black text-slate-900">🛡️ Litigation Defense Ledger</h1>
                 <p class="text-slate-500 mt-1">Immutable record of statutory duty-of-care verification checks.</p>
               </div>
-              
+              <a href="/admin" class="bg-slate-800 text-white font-bold px-4 py-2 rounded-lg hover:bg-slate-700 transition">&larr; Back to Dashboard</a>
+            </div>
+
+            <div class="mb-8 bg-blue-50 border border-blue-200 rounded-xl p-5 flex justify-between items-center shadow-sm">
               <div class="flex items-center gap-3">
-                <a href="/admin/archive/export" class="bg-blue-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition shadow-sm flex items-center gap-2">
-                  📥 Export Audit Trail (.CSV)
-                </a>
-                <a href="/admin" class="bg-slate-800 text-white font-bold px-4 py-2 rounded-lg hover:bg-slate-700 transition">&larr; Back to Dashboard</a>
+                <span class="text-2xl">📊</span>
+                <div>
+                  <h4 class="font-bold text-slate-900 text-sm">Official Regulatory Export Available</h4>
+                  <p class="text-xs text-slate-600 mt-0.5">Generate a time-stamped, Excel-compatible CSV audit trail for state or federal labor inspectors.</p>
+                </div>
               </div>
+              <a href="/admin/archive/export" class="bg-blue-600 text-white font-bold px-5 py-2.5 rounded-lg hover:bg-blue-700 transition shadow-sm whitespace-nowrap text-sm flex items-center gap-2">
+                📥 Export Audit Trail (.CSV)
+              </a>
             </div>
 
             <div class="flex border-b border-slate-200 mb-6 gap-2">
