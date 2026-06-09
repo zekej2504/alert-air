@@ -133,36 +133,46 @@ async function runAirQualityCheck() {
       const isNewEscalation = !lastLog || lastLog.status !== alertLevel;
 
       // 3. Fire notification alerts ONLY if a threshold is broken AND it just changed
-      if (alertLevel !== "SAFE" && isNewEscalation) {
-        try {
-          // SMS to Crew Lead
+    if (alertLevel !== "SAFE" && isNewEscalation) {
+      try {
+        // Set up plain-English messaging based on the severity level
+        let smsSubject = "SMOKE ALERT";
+        let smsText = `AQI at ${site.incidentName} is ${liveAirNowAqi}. Smoke is getting heavy. N95 masks are available for anyone who wants one—wearing them is VOLUNTARY right now. Grab masks for interested crew and sign off here: https://alert-air-ezio.onrender.com/signoff/${site.id}`;
+
+        if (alertLevel === "MANDATORY") {
+          smsSubject = "SAFETY MANDATE";
+          smsText = `CRITICAL: AQI at ${site.incidentName} hit ${liveAirNowAqi}. Air quality is hazardous. N95 masks are now MANDATORY for all personnel on site. Distribute masks immediately and log compliance here: https://alert-air-ezio.onrender.com/signoff/${site.id}`;
+        }
+
+        // SMS to Crew Lead
+        await transporter.sendMail({
+          from: '"Alert Air Compliance" <compliance.alertair@gmail.com>',
+          to: `${site.foremanPhone}${site.carrier}`,
+          subject: smsSubject,
+          text: smsText
+        });
+
+        // SMS to Admin
+        if (site.company.adminPhone && site.company.adminCarrier) {
           await transporter.sendMail({
             from: '"Alert Air Compliance" <compliance.alertair@gmail.com>',
-            to: `${site.foremanPhone}${site.carrier}`,
-            subject: 'OSHA ALERT',
-            text: `URGENT (${alertLevel}): AQI at ${site.incidentName} hit ${liveAirNowAqi}. N95 protocols triggered for ${site.company.name}. Sign off: https://alert-air-ezio.onrender.com/signoff/${site.id}`
+            to: `${site.company.adminPhone}${site.company.adminCarrier}`,
+            subject: 'CREW ALERT DISPATCHED',
+            text: `ADMIN ALERT: ${smsSubject} sent to crew at ${site.incidentName} (${liveAirNowAqi} AQI). Awaiting foreman sign-off.`
           });
-
-          // SMS to Admin
-          if (site.company.adminPhone && site.company.adminCarrier) {
-            await transporter.sendMail({
-              from: '"Alert Air Compliance" <compliance.alertair@gmail.com',
-              to: `${site.company.adminPhone}${site.company.adminCarrier}`,
-              subject: 'ADMIN ALERT',
-              text: `ADMIN ALERT: Hazard detected at ${site.incidentName}. Awaiting signature.`
-            });
-          }
-        } catch (emailError) {
-          console.error(`❌ Failed to send gateway SMS:`, emailError);
         }
-      } else if (alertLevel !== "SAFE" && !isNewEscalation) {
-        // Silently log that we suppressed a duplicate text
-        console.log(`🔇 Suppressed duplicate text for ${site.incidentName}. Status remains ${alertLevel}.`);
+        console.log(`📱 Alerts cleanly dispatched for ${site.incidentName} [Status: ${alertLevel}]`);
+      } catch (emailError) {
+        console.error(`❌ Failed to send gateway SMS:`, emailError);
       }
-    } catch (error) {
-      console.error(`❌ Failed to process site ${site.incidentName}:`, error);
+    } else if (alertLevel !== "SAFE" && !isNewEscalation) {
+      // Silently log that we suppressed a duplicate text
+      console.log(`🔇 Suppressed duplicate text for ${site.incidentName}. Status remains ${alertLevel}.`);
     }
+  } catch (error) {
+    console.error(`❌ Failed to process site ${site.incidentName}:`, error);
   }
+}
 }
 
 cron.schedule('0 * * * *', runAirQualityCheck);
