@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import cron from 'node-cron';
@@ -75,16 +76,20 @@ async function runAirQualityCheck() {
       const voluntaryLimit = stateLaw?.voluntaryAqi || 151;
       const mandatoryLimit = stateLaw?.mandatoryAqi || 9999; 
 
-      // 1. Fetch Real Live AQI from the US Government API
+// 1. Fetch Real Live AQI from the US Government API
       let liveAirNowAqi = 0; 
       
       try {
-        const airNowUrl = `https://www.airnowapi.org/aq/observation/latLong/current/?format=application/json&latitude=${site.latitude}&longitude=${site.longitude}&distance=50&API_KEY=${process.env.AIRNOW_API_KEY}`;
+        const airNowUrl = `https://www.airnowapi.org/aq/observation/latLong/current/?format=application/json&latitude=${site.latitude}&longitude=${site.longitude}&distance=50&API_KEY=350E39ED-95D5-42DF-A55F-11AD91D38FB8`;
         const airNowResponse = await axios.get(airNowUrl);
         
         // AirNow returns an array of different pollutants. We isolate the highest AQI number.
         if (airNowResponse.data && airNowResponse.data.length > 0) {
            liveAirNowAqi = Math.max(...airNowResponse.data.map((reading: any) => reading.AQI));
+           
+           // THE NEW VIEWFINDER LOG:
+           console.log(`✅ Success! ${site.incidentName} current AQI is: ${liveAirNowAqi}`);
+
         } else {
            console.log(`⚠️ AirNow returned no data for coordinates ${site.latitude}, ${site.longitude}.`);
            continue; 
@@ -318,6 +323,46 @@ app.post('/api/worksite/:id/toggle', async (req, res) => {
   } catch (error) {
     console.error("Error toggling worksite status:", error);
     res.status(500).send("<h2 style='color: red; text-align: center;'>Failed to update crew status.</h2>");
+  }
+});
+
+// --- PERMANENTLY NUKE WORKSITE AND RELATED LOGS ---
+app.post('/api/worksite/:id/delete', async (req, res) => {
+  if (!req.session.companyId) return res.redirect('/login');
+
+  try {
+    const worksiteId = req.params.id;
+    
+    const worksite = await prisma.worksite.findUnique({
+      where: { id: worksiteId }
+    });
+
+    if (!worksite || worksite.companyId !== req.session.companyId) {
+      return res.status(403).send("Unauthorized access.");
+    }
+
+    // 1. Clear out all dependent child tables to prevent foreign-key crashes
+    if (prisma.hourlyAirLog) {
+      await prisma.hourlyAirLog.deleteMany({ where: { worksiteId } });
+    }
+    if (prisma.complianceSignoff) {
+      await prisma.complianceSignoff.deleteMany({ where: { worksiteId } });
+    }
+    // Handles the early text-signature table fallback
+    if (prisma.signOff) {
+      await prisma.signOff.deleteMany({ where: { siteId: worksiteId } });
+    }
+
+    // 2. Erase the main worksite record
+    await prisma.worksite.delete({
+      where: { id: worksiteId }
+    });
+
+    res.redirect('/admin');
+    
+  } catch (error) {
+    console.error("Error purging worksite:", error);
+    res.status(500).send("<h2 style='color: red; text-align: center;'>Failed to delete crew record.</h2>");
   }
 });
 
@@ -589,6 +634,7 @@ app.get('/admin', async (req, res) => {
     orderBy: { isActive: 'desc' }
   });
 
+// 
 // 3. BUILD THE TABLE ROWS
   const rows = worksites.map(site => {
     const statusBadge = site.isActive 
@@ -597,6 +643,15 @@ app.get('/admin', async (req, res) => {
 
     const toggleAction = site.isActive ? 'Demobilize Crew' : 'Remobilize Crew';
     const buttonColor = site.isActive ? '#f0ad4e' : '#5cb85c';
+
+    // Show a delete button ONLY if the crew has already been demobilized
+    const deleteButton = !site.isActive 
+      ? `
+        <form action="/api/worksite/${site.id}/delete" method="POST" style="margin: 8px 0 0 0;" onsubmit="return confirm('Are you sure you want to permanently delete this crew and all its logs? This cannot be undone.');">
+          <button type="submit" style="background: #d9534f; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; font-size: 13px;">❌ Delete Record</button>
+        </form>
+      `
+      : '';
 
     return `
       <tr style="border-bottom: 1px solid #eee;">
@@ -611,14 +666,15 @@ app.get('/admin', async (req, res) => {
           </form>
         </td>
 
-        <td style="padding: 16px;">
+        <td style="padding: 16px; vertical-align: top;">
           <form action="/api/worksite/${site.id}/toggle" method="POST" style="margin: 0;">
-            <button type="submit" style="background: ${buttonColor}; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">${toggleAction}</button>
+            <button type="submit" style="background: ${buttonColor}; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">${toggleAction}</button>
           </form>
+          ${deleteButton}
         </td>
-<td style="padding: 15px 16px; vertical-align: top;">
-  <a href="/admin/worksite/${site.id}/logs" style="display: inline-block; background: #3b82f6; color: white; padding: 8px 14px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 13px; box-shadow: 0 2px 4px rgba(59,130,246,0.3);">🔍 View Log History</a>
-</td>
+        <td style="padding: 15px 16px; vertical-align: top;">
+          <a href="/admin/worksite/${site.id}/logs" style="display: inline-block; background: #3b82f6; color: white; padding: 8px 14px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 13px; box-shadow: 0 2px 4px rgba(59,130,246,0.3);">🔍 View Log History</a>
+        </td>
       </tr>
     `;
   }).join('');
@@ -679,7 +735,6 @@ ${worksites.length === 0 ?
   `<a href="https://buy.stripe.com/fZu7sMgx34i7bDo4DHgrS00" target="_blank" style="display: inline-block; background: #6772e5; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 15px; margin-left: 10px;">💳 Start 14-Day Free Trial</a>` 
 : ``}
 
-                <!-- DEMOBILIZATION NOTICE -->
                 <div style="background: #e9ecef; padding: 15px; border-radius: 8px; margin-top: 20px; font-size: 14px; color: #495057; border-left: 4px solid #6c757d;">
                   <strong>Billing & Demobilization:</strong> Billing is flat-rate per active monitor deployment. To demobilize a crew and instantly stop billing for that unit, please email <strong>billing@alertair.com</strong> with the incident name.
                 </div>
@@ -706,7 +761,6 @@ ${worksites.length === 0 ?
       </body>
     </html>
   `);
-
 // --- THE MOBILE SIGNOFF PAGE (NATIVE APP UPGRADE) ---
 app.get('/signoff/:worksiteId/:logId', async (req, res) => {
   res.send(`
