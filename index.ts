@@ -1097,10 +1097,15 @@ app.get('/admin/litigation-records', async (req, res) => {
                 <h1 class="text-3xl font-black text-slate-900">🛡️ Litigation Defense Ledger</h1>
                 <p class="text-slate-500 mt-1">Immutable record of statutory duty-of-care verification checks.</p>
               </div>
-              <a href="/admin" class="bg-slate-800 text-white font-bold px-4 py-2 rounded-lg hover:bg-slate-700 transition">&larr; Back to Dashboard</a>
+              
+              <div class="flex items-center gap-3">
+                <a href="/admin/archive/export" class="bg-blue-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition shadow-sm flex items-center gap-2">
+                  📥 Export Audit Trail (.CSV)
+                </a>
+                <a href="/admin" class="bg-slate-800 text-white font-bold px-4 py-2 rounded-lg hover:bg-slate-700 transition">&larr; Back to Dashboard</a>
+              </div>
             </div>
 
-            <!-- Tab Navigation Headers -->
             <div class="flex border-b border-slate-200 mb-6 gap-2">
               <button onclick="switchTab('exceeding')" id="tab-exceeding" class="py-3 px-6 font-bold text-sm border-b-2 border-blue-600 text-blue-600 outline-none transition">
                 ⚠️ Exceeded Thresholds (${allLogs.filter(l => l.status !== 'SAFE').length})
@@ -1110,7 +1115,6 @@ app.get('/admin/litigation-records', async (req, res) => {
               </button>
             </div>
 
-            <!-- EXCEEDING TAB GRID -->
             <div id="panel-exceeding" class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200">
               <table class="w-full text-left border-collapse">
                 <thead>
@@ -1124,7 +1128,6 @@ app.get('/admin/litigation-records', async (req, res) => {
               </table>
             </div>
 
-            <!-- SAFE TAB GRID (HIDDEN BY DEFAULT) -->
             <div id="panel-safe" class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200 hidden">
               <table class="w-full text-left border-collapse">
                 <thead>
@@ -1175,4 +1178,48 @@ cron.schedule('0 * * * *', () => {
 });
 
 const PORT = process.env.PORT || 3000;
+// 📊 LITIGATION-GRADE AUDIT EXPORT: Generates immutable CSV for OSHA inspectors
+app.get('/admin/archive/export', async (req: any, res: any) => {
+  try {
+    // 1. Fetch historical records including the correct 'worksite' relation
+    const logs = await prisma.hourlyAirLog.findMany({
+      include: {
+        worksite: true,
+      },
+      orderBy: {
+        timestamp: 'desc',
+      },
+    });
+
+    // 2. Set HTTP headers to force file download
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=alert_air_compliance_report.csv');
+
+    // 3. Define headers
+    let csvContent = 'Timestamp,Worksite Name,State,Recorded AQI,Status\n';
+
+    // 4. Iterate through rows using confirmed schema properties
+    for (const log of logs) {
+      const timestamp = log.timestamp ? log.timestamp.toISOString().replace(/T/, ' ').replace(/\..+/, '') : 'N/A';
+      const siteName = log.worksite?.incidentName ? log.worksite.incidentName.replace(/,/g, ' ') : 'Unknown Site';
+      const state = log.worksite?.state || 'N/A';
+      const aqiDisplay = log.aqi ?? 'N/A';
+
+      // Check the raw numeric type directly to satisfy the compiler
+      const severity = typeof log.aqi === 'number'
+        ? (log.aqi >= 101 ? 'MANDATORY' : log.aqi >= 69 ? 'VOLUNTARY' : 'SAFE')
+        : 'UNKNOWN';
+      
+      csvContent += `${timestamp},${siteName},${state},${aqiDisplay},${severity}\n`;
+    }
+
+    // 5. Stream download
+    return res.status(200).send(csvContent);
+
+  } catch (error) {
+    console.error('❌ Failed to construct compliance CSV export:', error);
+    return res.status(500).send('Database execution failed during audit export generation.');
+  }
+});
+
 app.listen(PORT, () => console.log(`🔥 Alert Air Server running on port ${PORT}`));
