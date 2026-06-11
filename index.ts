@@ -897,7 +897,7 @@ res.send(`
             : ``}
 
             <div style="background: #e9ecef; padding: 15px; border-radius: 8px; font-size: 14px; color: #495057; border-left: 4px solid #6c757d; line-height: 1.5;">
-              <strong>Statutory Tracking Window:</strong> Monitor records represent active regulatory data collections. To formally demobilize a crew field unit and seal its immutable historical audit trail, please submit the project closeout notice directly to <a href="mailto:compliance@alertair.com" style="color: #0275d8; font-weight: bold; text-decoration: none;">compliance@alertair.com</a> with the designated incident name.
+              <strong>Billing & Demobilization:</strong> Billing is flat-rate per active monitor deployment. To demobilize a crew and instantly stop billing for that unit, please email <a href="mailto:compliance.alertair@gmail.com" style="color: #0275d8; font-weight: bold; text-decoration: none;">compliance.alertair@gmail.com</a> with the incident name.
             </div>
               
             <div style="overflow-x: auto; width: 100%; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); border: 1px solid #dee2e6;">
