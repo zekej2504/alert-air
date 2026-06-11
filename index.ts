@@ -306,6 +306,53 @@ app.get('/terms', (req, res) => {
   `);
 });
 
+// 🔒 B2B PRIVACY POLICY ROUTE
+app.get('/privacy', (req, res) => {
+  res.send(`
+    <html>
+      <head>
+        <title>Privacy Policy - Alert Air</title>
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #333; background: #f8fafc; padding: 3rem 1rem; margin: 0; display: flex; justify-content: center;">
+        <div style="background: white; padding: 3rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); max-width: 650px; width: 100%;">
+          
+          <h1 style="color: #0f172a; font-size: 28px; margin-top: 0; margin-bottom: 0.5rem; letter-spacing: -0.5px;">Privacy Policy</h1>
+          <p style="color: #64748b; font-size: 14px; margin-top: 0; margin-bottom: 2rem;">Last Updated: June 2026</p>
+          
+          <div style="font-size: 15px; color: #334155; display: flex; flex-direction: column; gap: 1.5rem;">
+            
+            <section>
+              <h2 style="color: #1e3a8a; font-size: 18px; margin-bottom: 0.5rem;">1. Information We Collect</h2>
+              <p style="margin: 0;">Alert Air collects necessary corporate telemetry to execute automated compliance operations. This includes corporate registration contacts, administrative phone metrics, physical worksite geographical coordinates (latitude and longitude parameters), and on-site foreman routing data required to transmit real-time hazard notifications.</p>
+            </section>
+
+            <section>
+              <h2 style="color: #1e3a8a; font-size: 18px; margin-bottom: 0.5rem;">2. Utilization of Telemetry Data</h2>
+              <p style="margin: 0;">Data processed by the system is leveraged exclusively to run statutory air quality evaluations, maintain the subscriber's historical defense ledger, and dispatch automated SMS notifications when local AQI measurements exceed legislative action thresholds.</p>
+            </section>
+
+            <section>
+              <h2 style="color: #1e3a8a; font-size: 18px; margin-bottom: 0.5rem;">3. Data Retention Framework</h2>
+              <p style="margin: 0;">To protect subscribers during potential regulatory investigations or toxic exposure civil claims, Alert Air maintains hourly monitoring logs and crew verification timestamps inside a secure, encrypted cloud database environment. Historical ledger records are preserved indefinitely unless formal deletion is explicitly requested by the corporate subscriber.</p>
+            </section>
+
+            <section>
+              <h2 style="color: #1e3a8a; font-size: 18px; margin-bottom: 0.5rem;">4. Third-Party Disclosures</h2>
+              <p style="margin: 0;">Alert Air does not sell, lease, or distribute operational telemetry to third-party brokers or advertisers. Data fields are shared strictly with verified utility gateways (such as regional telecommunication carriers and SMS aggregators) solely to execute mandatory text alerts to field personnel.</p>
+            </section>
+
+          </div>
+          
+          <div style="margin-top: 3rem; border-top: 1px solid #e2e8f0; padding-top: 1.5rem; text-align: center;">
+            <button onclick="window.close();" style="background: #0275d8; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px;">Close Window</button>
+          </div>
+
+        </div>
+      </body>
+    </html>
+  `);
+});
+
 app.post('/signup', async (req, res) => {
   const { companyName, email, password, adminPhone, adminCarrier, tosAccepted } = req.body;
 
