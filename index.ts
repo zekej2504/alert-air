@@ -80,18 +80,25 @@ async function runAirQualityCheck() {
       let liveAirNowAqi = 0; 
       
       try {
-        const airNowUrl = `https://www.airnowapi.org/aq/observation/latLong/current/?format=application/json&latitude=${site.latitude}&longitude=${site.longitude}&distance=50&API_KEY=350E39ED-95D5-42DF-A55F-11AD91D38FB8`;
-        const airNowResponse = await axios.get(airNowUrl);
+        // Dynamic URL generator utilizing your explicit API key and site properties
+        const buildAirNowUrl = (distance: number) => 
+          `https://www.airnowapi.org/aq/observation/latLong/current/?format=application/json&latitude=${site.latitude}&longitude=${site.longitude}&distance=${distance}&API_KEY=350E39ED-95D5-42DF-A55F-11AD91D38FB8`;
+
+        // First attempt: Look within a tight 50-mile radius
+        let airNowResponse = await axios.get(buildAirNowUrl(50));
         
-        // AirNow returns an array of different pollutants. We isolate the highest AQI number.
+        // Intercept & Fallback: If 50 miles is empty, dynamically expand the net to 150 miles
+        if (!airNowResponse.data || airNowResponse.data.length === 0) {
+           console.log(`⚠️ AirNow returned no data within 50 miles for ${site.incidentName}. Dynamically expanding search to 150 miles...`);
+           airNowResponse = await axios.get(buildAirNowUrl(150));
+        }
+
+        // Process the data if either the 50-mile or 150-mile attempt succeeded
         if (airNowResponse.data && airNowResponse.data.length > 0) {
            liveAirNowAqi = Math.max(...airNowResponse.data.map((reading: any) => reading.AQI));
-           
-           // THE NEW VIEWFINDER LOG:
            console.log(`✅ Success! ${site.incidentName} current AQI is: ${liveAirNowAqi}`);
-
         } else {
-           console.log(`⚠️ AirNow returned no data for coordinates ${site.latitude}, ${site.longitude}.`);
+           console.log(`❌ AirNow completely missing station data for ${site.incidentName} after max 150-mile radius fallback.`);
            continue; 
         }
       } catch (apiError: any) {
