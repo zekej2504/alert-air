@@ -175,13 +175,6 @@ async function runAirQualityCheck() {
 }
 }
 
-cron.schedule('0 * * * *', runAirQualityCheck);
-
-app.get('/trigger', async (req, res) => {
-  await runAirQualityCheck();
-  res.send("<h2 style='color: green; font-family: sans-serif;'>✅ Manual check triggered! Look at your VS Code terminal.</h2>");
-});
-
 // --- THE SIGN-UP PORTAL ---
 app.get('/signup', (req, res) => {
   res.send(`
@@ -454,6 +447,28 @@ app.post('/api/worksite', async (req, res) => {
     }
   });
   res.redirect('/admin');
+});
+
+// ⏰ SECURE BACKGROUND CRON TRIGGER ENDPOINT
+app.get('/api/cron-trigger', async (req, res) => {
+  const { secret } = req.query;
+
+  // Security firewall to prevent unauthorized execution
+  if (secret !== 'alert_air_secure_heartbeat_2026') {
+    console.warn('⚠️ Unauthorized cron trigger attempt detected.');
+    return res.status(401).send('Unauthorized trigger attempt.');
+  }
+
+  console.log('⚡ External cron heartbeat validated. Executing air quality sync...');
+  
+  try {
+    // Triggers your existing automated tracking loop
+    await runAirQualityCheck(); 
+    return res.status(200).send('Compliance data synchronization complete.');
+  } catch (error) {
+    console.error('❌ Automated compliance cron execution failed:', error);
+    return res.status(500).send('Internal compliance engine error.');
+  }
 });
 
 // --- TOGGLE WORKSITE STATUS (DEMOBILIZE) ---
@@ -1327,12 +1342,6 @@ app.get('/admin/litigation-records', async (req, res) => {
     console.error("Litigation Ledger Error:", error);
     res.status(500).send("Failed to build audit records.");
   }
-});
-
-// --- THE HEARTBEAT: AUTOMATED HOURLY CHECKS ---
-cron.schedule('0 * * * *', () => {
-  console.log('\n⏰ CRON TRIGGER: Initiating hourly Alert Air compliance check...');
-  runAirQualityCheck();
 });
 
 const PORT = process.env.PORT || 3000;
