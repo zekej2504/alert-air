@@ -913,7 +913,7 @@ res.send(`
       </body>
     </html>
   `);
-
+});
 // --- THE MOBILE SIGNOFF PAGE (NATIVE APP UPGRADE) ---
 app.get('/signoff/:worksiteId/:logId', async (req, res) => {
   res.send(`
@@ -1049,7 +1049,7 @@ app.post('/api/signoff', async (req, res) => {
     res.send("<h2 style='font-family: sans-serif; color: red; text-align: center; margin-top: 3rem;'>Error: This compliance log has already been signed!</h2>");
   }
 });
-});
+
 
 // --- THE IMMUTABLE AUDIT LEDGER ---
 app.get('/admin/audit', async (req, res) => {
