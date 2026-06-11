@@ -794,11 +794,12 @@ app.get('/admin', async (req, res) => {
 
 res.send(`
     <html>
-      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f7f6; padding: 3rem; color: #333; margin: 0;">
-        <div style="max-width: 1000px; margin: 0 auto;">
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f7f6; padding: 3rem 1rem; color: #333; margin: 0; display: flex; justify-content: center;">
+        
+        <div style="max-width: 1000px; width: 100%; display: flex; flex-direction: column; gap: 2rem;">
             
-            <div style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 2rem;">
-              <h2 style="margin-top: 0; color: #2c3e50;">➕ Deploy New Monitor</h2>
+            <div style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+              <h2 style="margin-top: 0; color: #2c3e50; font-weight: 800;">➕ Deploy New Monitor</h2>
               <form action="/api/worksite" method="POST" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
                   <input type="text" name="incidentName" placeholder="Fire Name (e.g. Dixie Fire)" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; flex: 1; min-width: 200px;">
                   
@@ -833,9 +834,9 @@ res.send(`
               </form>
             </div>
 
-           <div style="border-bottom: 2px solid #eee; padding-bottom: 1.5rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+           <div style="border-bottom: 2px solid #eee; padding-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                 <div>
-                  <h1 style="color: #0275d8; font-size: 26px; margin: 0; letter-spacing: -0.5px;">Alert Air Wildfire Compliance</h1>
+                  <h1 style="color: #0275d8; font-size: 26px; margin: 0; letter-spacing: -0.5px; font-weight: 800;">Alert Air Wildfire Compliance</h1>
                   <p style="color: #6c757d; margin-top: 6px; margin-bottom: 0; font-size: 15px; font-weight: 500;">Active Command Center</p>
                 </div>
                 
@@ -844,36 +845,36 @@ res.send(`
                 </a>
               </div>
 
-${worksites.length === 0 ?
-  `<a href="https://buy.stripe.com/fZu7sMgx34i7bDo4DHgrS00" target="_blank" style="display: inline-block; background: #6772e5; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 15px; margin-left: 10px;">💳 Start 14-Day Free Trial</a>` 
-: ``}
+            ${worksites.length === 0 ?
+              `<a href="https://buy.stripe.com/fZu7sMgx34i7bDo4DHgrS00" target="_blank" style="display: inline-block; background: #6772e5; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; max-width: 200px; text-align: center;">💳 Start 14-Day Free Trial</a>` 
+            : ``}
 
-                <div style="background: #e9ecef; padding: 15px; border-radius: 8px; margin-top: 20px; font-size: 14px; color: #495057; border-left: 4px solid #6c757d;">
-                  <strong>Billing & Demobilization:</strong> Billing is flat-rate per active monitor deployment. To demobilize a crew and instantly stop billing for that unit, please email <strong>billing@alertair.com</strong> with the incident name.
-                </div>
-              </div>
-              
-              <div style="overflow-x: auto; width: 100%;">
-                <table style="width: 100%; min-width: 800px; border-collapse: collapse; text-align: left;">
-                  <thead>
-                    <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; color: #495057; font-size: 14px;">
-                      <th style="padding: 12px 16px;">INCIDENT NAME</th>
-                      <th style="padding: 12px 16px;">STATUS</th>
-                      <th style="padding: 12px 16px;">CREW LEAD DETAILS</th>
-                      <th style="padding: 12px 16px;">ACTIONS</th>
-                      <th style="padding: 12px 16px;">AUDIT TRAIL</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${rows}
-                  </tbody>
-                </table>
-              </div>
+            <div style="background: #e9ecef; padding: 15px; border-radius: 8px; font-size: 14px; color: #495057; border-left: 4px solid #6c757d; line-height: 1.5;">
+              <strong>Statutory Tracking Window:</strong> Monitor records represent active regulatory data collections. To formally demobilize a crew field unit and seal its immutable historical audit trail, please submit the project closeout notice directly to <a href="mailto:compliance@alertair.com" style="color: #0275d8; font-weight: bold; text-decoration: none;">compliance@alertair.com</a> with the designated incident name.
             </div>
+              
+            <div style="overflow-x: auto; width: 100%; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); border: 1px solid #dee2e6;">
+              <table style="width: 100%; min-width: 800px; border-collapse: collapse; text-align: left;">
+                <thead>
+                  <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; color: #495057; font-size: 13px; font-weight: 800;">
+                    <th style="padding: 16px;">INCIDENT NAME</th>
+                    <th style="padding: 16px;">STATUS</th>
+                    <th style="padding: 16px;">CREW LEAD DETAILS</th>
+                    <th style="padding: 16px;">ACTIONS</th>
+                    <th style="padding: 16px;">AUDIT TRAIL</th>
+                  </tr>
+                </thead>
+                <tbody style="font-size: 14px; color: #333;">
+                  ${rows}
+                </tbody>
+              </table>
+            </div>
+            
         </div>
       </body>
     </html>
   `);
+
 // --- THE MOBILE SIGNOFF PAGE (NATIVE APP UPGRADE) ---
 app.get('/signoff/:worksiteId/:logId', async (req, res) => {
   res.send(`
