@@ -254,41 +254,28 @@ app.get('/terms', (req, res) => {
       <head>
         <title>Terms of Service - Alert Air</title>
       </head>
-      <body style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #333; background: #f8fafc; padding: 3rem 1rem; margin: 0; display: flex; justify-content: center;">
-        <div style="background: white; padding: 3rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); max-width: 650px; width: 100%;">
+      <body style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #334155; background: #f8fafc; padding: 3rem 1rem; margin: 0; display: flex; justify-content: center;">
+        
+        <div style="background: white; padding: 3rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); max-width: 650px; width: 100%; box-sizing: border-box;">
           
           <h1 style="color: #0f172a; font-size: 28px; margin-top: 0; margin-bottom: 0.5rem; letter-spacing: -0.5px;">Terms of Service</h1>
           <p style="color: #64748b; font-size: 14px; margin-top: 0; margin-bottom: 2rem;">Last Updated: June 2026</p>
           
-          <div style="font-size: 15px; color: #334155; display: flex; flex-direction: column; gap: 1.5rem;">
-            
-            <section>
-              <h2 style="color: #1e3a8a; font-size: 18px; margin-bottom: 0.5rem;">1. Nature of the Service</h2>
-              <p style="margin: 0;">Alert Air provides data aggregation, tracking, and compliance record-keeping software. The platform is designed to assist corporate subscribers in monitoring air quality metrics at designated worksites. Alert Air does not provide professional occupational safety, medical, or legal counsel.</p>
-            </section>
+          <h2 style="color: #1e3a8a; font-size: 18px; margin-top: 1.5rem; margin-bottom: 0.5rem;">1. Nature of the Service</h2>
+          <p style="margin: 0 0 1.5rem 0; font-size: 15px;">Alert Air provides data aggregation, tracking, and compliance record-keeping software. The platform is designed to assist corporate subscribers in monitoring air quality metrics at designated worksites. Alert Air does not provide professional occupational safety, medical, or legal counsel.</p>
 
-            <section>
-              <h2 style="color: #1e3a8a; font-size: 18px; margin-bottom: 0.5rem;">2. Reliance on Third-Party Environmental Data</h2>
-              <p style="margin: 0;">Subscriber acknowledges that Alert Air aggregates real-time air quality index (AQI) readings from public, third-party environmental monitoring feeds (including but not limited to the EPA and regional regulatory agencies). Alert Air makes no warranties, express or implied, regarding the accuracy, completeness, calibration, or real-time delivery performance of these external feeds.</p>
-            </section>
+          <h2 style="color: #1e3a8a; font-size: 18px; margin-top: 1.5rem; margin-bottom: 0.5rem;">2. Reliance on Third-Party Environmental Data</h2>
+          <p style="margin: 0 0 1.5rem 0; font-size: 15px;">Subscriber acknowledges that Alert Air aggregates real-time air quality index (AQI) readings from public, third-party environmental monitoring feeds (including but not limited to the EPA and regional regulatory agencies). Alert Air makes no warranties, express or implied, regarding the accuracy, completeness, calibration, or real-time delivery performance of these external feeds.</p>
 
-            <section>
-              <h2 style="color: #1e3a8a; font-size: 18px; margin-bottom: 0.5rem;">3. Ultimate Statutory Responsibility</h2>
-              <p style="margin: 0;">The subscriber retains sole, non-delegable statutory responsibility for evaluating physical hazards, ensuring on-site workplace safety, implementing mandatory labor protections, and fully complying with all state, federal, or OSHA standards. Missed, delayed, or unreceived platform notifications shall not alleviate subscriber of this legal obligation.</p>
-            </section>
+          <h2 style="color: #1e3a8a; font-size: 18px; margin-top: 1.5rem; margin-bottom: 0.5rem;">3. Ultimate Statutory Responsibility</h2>
+          <p style="margin: 0 0 1.5rem 0; font-size: 15px;">The subscriber retains sole, non-delegable statutory responsibility for evaluating physical hazards, ensuring on-site workplace safety, implementing mandatory labor protections, and fully complying with all state, federal, or OSHA standards. Missed, delayed, or unreceived platform notifications shall not alleviate subscriber of this legal obligation.</p>
 
-            <section>
-              <h2 style="color: #1e3a8a; font-size: 18px; margin-bottom: 0.5rem;">4. Limitation of Liability</h2>
-              <p style="margin: 0; font-weight: 500;">To the maximum extent permitted by applicable law, in no event shall Alert Air be liable for any consequential, incidental, indirect, special, or punitive damages whatsoever—including but not limited to regulatory fines, OSHA citations, project delays, or toxic exposure personal injury claims—arising out of the use or inability to use the platform. Alert Air's total aggregate liability under this agreement shall be strictly capped at the amount actually paid by the subscriber to Alert Air during the preceding three (3) months.</p>
-            </section>
+          <h2 style="color: #1e3a8a; font-size: 18px; margin-top: 1.5rem; margin-bottom: 0.5rem;">4. Limitation of Liability</h2>
+          <p style="margin: 0 0 1.5rem 0; font-size: 15px; font-weight: 500;">To the maximum extent permitted by applicable law, in no event shall Alert Air be liable for any consequential, incidental, indirect, special, or punitive damages whatsoever—including but not limited to regulatory fines, OSHA citations, project delays, or toxic exposure personal injury claims—arising out of the use or inability to use the platform. Alert Air's total aggregate liability under this agreement shall be strictly capped at the amount actually paid by the subscriber to Alert Air during the preceding three (3) months.</p>
 
-            <section>
-              <h2 style="color: #1e3a8a; font-size: 18px; margin-bottom: 0.5rem;">5. Indemnification</h2>
-              <p style="margin: 0;">Subscriber agrees to indemnify, defend, and hold harmless Alert Air and its developers from and against any and all claims, liabilities, losses, administrative penalties, civil fines, or legal expenses (including attorneys' fees) resulting from or arising out of subscriber's on-site operations, field employment practices, or failure to implement proper safety protocols during recorded air quality threshold excursions.</p>
-            </section>
+          <h2 style="color: #1e3a8a; font-size: 18px; margin-top: 1.5rem; margin-bottom: 0.5rem;">5. Indemnification</h2>
+          <p style="margin: 0 0 1.5rem 0; font-size: 15px;">Subscriber agrees to indemnify, defend, and hold harmless Alert Air and its developers from and against any and all claims, liabilities, losses, administrative penalties, civil fines, or legal expenses (including attorneys' fees) resulting from or arising out of subscriber's on-site operations, field employment practices, or failure to implement proper safety protocols during recorded air quality threshold excursions.</p>
 
-          </div>
-          
           <div style="margin-top: 3rem; border-top: 1px solid #e2e8f0; padding-top: 1.5rem; text-align: center;">
             <button onclick="window.close();" style="background: #0275d8; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px;">Close Window</button>
           </div>
@@ -300,42 +287,32 @@ app.get('/terms', (req, res) => {
 });
 
 // 🔒 B2B PRIVACY POLICY ROUTE
+// 🔒 FIXED PRIVACY POLICY ROUTE
 app.get('/privacy', (req, res) => {
   res.send(`
     <html>
       <head>
         <title>Privacy Policy - Alert Air</title>
       </head>
-      <body style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #333; background: #f8fafc; padding: 3rem 1rem; margin: 0; display: flex; justify-content: center;">
-        <div style="background: white; padding: 3rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); max-width: 650px; width: 100%;">
+      <body style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #334155; background: #f8fafc; padding: 3rem 1rem; margin: 0; display: flex; justify-content: center;">
+        
+        <div style="background: white; padding: 3rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); max-width: 650px; width: 100%; box-sizing: border-box;">
           
           <h1 style="color: #0f172a; font-size: 28px; margin-top: 0; margin-bottom: 0.5rem; letter-spacing: -0.5px;">Privacy Policy</h1>
           <p style="color: #64748b; font-size: 14px; margin-top: 0; margin-bottom: 2rem;">Last Updated: June 2026</p>
           
-          <div style="font-size: 15px; color: #334155; display: flex; flex-direction: column; gap: 1.5rem;">
-            
-            <section>
-              <h2 style="color: #1e3a8a; font-size: 18px; margin-bottom: 0.5rem;">1. Information We Collect</h2>
-              <p style="margin: 0;">Alert Air collects necessary corporate telemetry to execute automated compliance operations. This includes corporate registration contacts, administrative phone metrics, physical worksite geographical coordinates (latitude and longitude parameters), and on-site foreman routing data required to transmit real-time hazard notifications.</p>
-            </section>
+          <h2 style="color: #1e3a8a; font-size: 18px; margin-top: 1.5rem; margin-bottom: 0.5rem;">1. Information We Collect</h2>
+          <p style="margin: 0 0 1.5rem 0; font-size: 15px;">Alert Air collects necessary corporate telemetry to execute automated compliance operations. This includes corporate registration contacts, administrative phone metrics, physical worksite geographical coordinates (latitude and longitude parameters), and on-site foreman routing data required to transmit real-time hazard notifications.</p>
 
-            <section>
-              <h2 style="color: #1e3a8a; font-size: 18px; margin-bottom: 0.5rem;">2. Utilization of Telemetry Data</h2>
-              <p style="margin: 0;">Data processed by the system is leveraged exclusively to run statutory air quality evaluations, maintain the subscriber's historical defense ledger, and dispatch automated SMS notifications when local AQI measurements exceed legislative action thresholds.</p>
-            </section>
+          <h2 style="color: #1e3a8a; font-size: 18px; margin-top: 1.5rem; margin-bottom: 0.5rem;">2. Utilization of Telemetry Data</h2>
+          <p style="margin: 0 0 1.5rem 0; font-size: 15px;">Data processed by the system is leveraged exclusively to run statutory air quality evaluations, maintain the subscriber's historical defense ledger, and dispatch automated SMS notifications when local AQI measurements exceed legislative action thresholds.</p>
 
-            <section>
-              <h2 style="color: #1e3a8a; font-size: 18px; margin-bottom: 0.5rem;">3. Data Retention Framework</h2>
-              <p style="margin: 0;">To protect subscribers during potential regulatory investigations or toxic exposure civil claims, Alert Air maintains hourly monitoring logs and crew verification timestamps inside a secure, encrypted cloud database environment. Historical ledger records are preserved indefinitely unless formal deletion is explicitly requested by the corporate subscriber.</p>
-            </section>
+          <h2 style="color: #1e3a8a; font-size: 18px; margin-top: 1.5rem; margin-bottom: 0.5rem;">3. Data Retention Framework</h2>
+          <p style="margin: 0 0 1.5rem 0; font-size: 15px;">To protect subscribers during potential regulatory investigations or toxic exposure civil claims, Alert Air maintains hourly monitoring logs and crew verification timestamps inside a secure, encrypted cloud database environment. Historical ledger records are preserved indefinitely unless formal deletion is explicitly requested by the corporate subscriber.</p>
 
-            <section>
-              <h2 style="color: #1e3a8a; font-size: 18px; margin-bottom: 0.5rem;">4. Third-Party Disclosures</h2>
-              <p style="margin: 0;">Alert Air does not sell, lease, or distribute operational telemetry to third-party brokers or advertisers. Data fields are shared strictly with verified utility gateways (such as regional telecommunication carriers and SMS aggregators) solely to execute mandatory text alerts to field personnel.</p>
-            </section>
+          <h2 style="color: #1e3a8a; font-size: 18px; margin-top: 1.5rem; margin-bottom: 0.5rem;">4. Third-Party Disclosures</h2>
+          <p style="margin: 0 0 1.5rem 0; font-size: 15px;">Alert Air does not sell, lease, or distribute operational telemetry to third-party brokers or advertisers. Data fields are shared strictly with verified utility gateways (such as regional telecommunication carriers and SMS aggregators) solely to execute mandatory text alerts to field personnel.</p>
 
-          </div>
-          
           <div style="margin-top: 3rem; border-top: 1px solid #e2e8f0; padding-top: 1.5rem; text-align: center;">
             <button onclick="window.close();" style="background: #0275d8; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px;">Close Window</button>
           </div>
