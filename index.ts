@@ -340,7 +340,7 @@ app.post('/signup', async (req, res) => {
   // 3. Cryptographically hash the password (salt 10 rounds)
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  // 4. Save the new company along with the immutable legal audit trail properties
+  // 4. Save the new company along with the immutable legal audit record properties
   const newCompany = await prisma.company.create({
     data: {
       name: companyName,
@@ -838,7 +838,7 @@ res.send(`
         <div style="max-width: 1000px; width: 100%; display: flex; flex-direction: column; gap: 2rem;">
             
             <div style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
-              <h2 style="margin-top: 0; color: #2c3e50; font-weight: 800;">➕ Deploy New Monitor</h2>
+              <h2 style="margin-top: 0; color: #2c3e50; font-weight: 800;"> Deploy New Crew</h2>
               <form action="/api/worksite" method="POST" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
                   <input type="text" name="incidentName" placeholder="Fire Name (e.g. Dixie Fire)" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; flex: 1; min-width: 200px;">
                   
@@ -869,18 +869,18 @@ res.send(`
                     <option value="@tmomail.net">T-Mobile</option>
                   </select>
 
-                  <button type="submit" style="background: #5cb85c; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold;">Deploy New Monitor</button>
+                  <button type="submit" style="background: #5cb85c; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold;">Deploy New Crew</button>
               </form>
             </div>
 
            <div style="border-bottom: 2px solid #eee; padding-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                 <div>
                   <h1 style="color: #0275d8; font-size: 26px; margin: 0; letter-spacing: -0.5px; font-weight: 800;">Alert Air Wildfire Compliance</h1>
-                  <p style="color: #6c757d; margin-top: 6px; margin-bottom: 0; font-size: 15px; font-weight: 500;">Active Command Center</p>
+                  <p style="color: #6c757d; margin-top: 6px; margin-bottom: 0; font-size: 15px; font-weight: 500;">Dashboard</p>
                 </div>
                 
                 <a href="/admin/litigation-records" style="display: inline-block; background: #1e293b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #0f172a;">
-                  🏛️ Master Compliance Archive
+                  Incident Archive
                 </a>
               </div>
 
@@ -900,7 +900,7 @@ res.send(`
                     <th style="padding: 16px;">STATUS</th>
                     <th style="padding: 16px;">CREW LEAD DETAILS</th>
                     <th style="padding: 16px;">ACTIONS</th>
-                    <th style="padding: 16px;">AUDIT TRAIL</th>
+                    <th style="padding: 16px;">AUDIT Record</th>
                   </tr>
                 </thead>
                 <tbody style="font-size: 14px; color: #333;">
@@ -1237,7 +1237,7 @@ app.get('/admin/litigation-records', async (req, res) => {
 <div class="max-w-5xl mx-auto">
             <div class="flex justify-between items-center mb-6">
               <div>
-                <h1 class="text-3xl font-black text-slate-900">🛡️ Litigation Defense Ledger</h1>
+                <h1 class="text-3xl font-black text-slate-900">Audit Records</h1>
                 <p class="text-slate-500 mt-1">Immutable record of statutory duty-of-care verification checks.</p>
               </div>
               <a href="/admin" class="bg-slate-800 text-white font-bold px-4 py-2 rounded-lg hover:bg-slate-700 transition">&larr; Back to Dashboard</a>
@@ -1247,12 +1247,12 @@ app.get('/admin/litigation-records', async (req, res) => {
               <div class="flex items-center gap-3">
                 <span class="text-2xl">📊</span>
                 <div>
-                  <h4 class="font-bold text-slate-900 text-sm">Official Regulatory Export Available</h4>
-                  <p class="text-xs text-slate-600 mt-0.5">Generate a time-stamped, Excel-compatible CSV audit trail for state or federal labor inspectors.</p>
+                  <h4 class="font-bold text-slate-900 text-sm">Export Regulatory Record</h4>
+                  <p class="text-xs text-slate-600 mt-0.5">Generate a time-stamped, Excel-compatible CSV audit record for state or federal labor inspectors.</p>
                 </div>
               </div>
               <a href="/admin/archive/export" class="bg-blue-600 text-white font-bold px-5 py-2.5 rounded-lg hover:bg-blue-700 transition shadow-sm whitespace-nowrap text-sm flex items-center gap-2">
-                📥 Export Audit Trail (.CSV)
+                📥 Export Audit Record (.CSV)
               </a>
             </div>
 
@@ -1273,7 +1273,7 @@ app.get('/admin/litigation-records', async (req, res) => {
                   </tr>
                 </thead>
                 <tbody>
-                  ${dynamicExceedingRows || '<tr><td colspan="5" class="p-8 text-center text-slate-400 italic">No threshold excursions on record.</td></tr>'}
+                  ${dynamicExceedingRows || '<tr><td colspan="5" class="p-8 text-center text-slate-400 italic">No records available.</td></tr>'}
                 </tbody>
               </table>
             </div>
