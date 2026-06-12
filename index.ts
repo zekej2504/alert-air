@@ -77,32 +77,43 @@ async function runAirQualityCheck() {
       const mandatoryLimit = stateLaw?.mandatoryAqi || 9999; 
 
 // 1. Fetch Real Live AQI from the US Government API
+// 1. Fetch Real Live AQI from OpenWeather (Satellite/Grid Data)
       let liveAirNowAqi = 0; 
       
+      // Official US EPA Piecewise Linear Function to map raw PM2.5 (µg/m³) to standard AQI (0-500)
+      const convertPM25ToAQI = (pm25: number): number => {
+        if (pm25 < 0) return 0;
+        if (pm25 <= 12.0)  return Math.round(((50 - 0)   / (12.0 - 0))   * (pm25 - 0)   + 0);
+        if (pm25 <= 35.4)  return Math.round(((100 - 51)  / (35.4 - 12.1))  * (pm25 - 12.1) + 51);
+        if (pm25 <= 55.4)  return Math.round(((150 - 101) / (55.4 - 35.5)) * (pm25 - 35.5) + 101);
+        if (pm25 <= 150.4) return Math.round(((200 - 151) / (150.4 - 55.5)) * (pm25 - 55.5) + 151);
+        if (pm25 <= 250.4) return Math.round(((300 - 201) / (250.4 - 150.5)) * (pm25 - 150.5) + 201);
+        if (pm25 <= 350.4) return Math.round(((400 - 301) / (350.4 - 250.5)) * (pm25 - 250.5) + 301);
+        if (pm25 <= 500.4) return Math.round(((500 - 401) / (500.4 - 350.5)) * (pm25 - 350.5) + 401);
+        return 500; // Cap at max hazard index
+      };
+
       try {
-        // Dynamic URL generator utilizing your explicit API key and site properties
-        const buildAirNowUrl = (distance: number) => 
-          `https://www.airnowapi.org/aq/observation/latLong/current/?format=application/json&latitude=${site.latitude}&longitude=${site.longitude}&distance=${distance}&API_KEY=350E39ED-95D5-42DF-A55F-11AD91D38FB8`;
-
-        // First attempt: Look within a tight 50-mile radius
-        let airNowResponse = await axios.get(buildAirNowUrl(50));
+        // We call OpenWeather's Air Pollution API (uses your environment variable or a clean key)
+        const openWeatherApiKey = process.env.OPENWEATHER_API_KEY || "YOUR_OPENWEATHER_KEY_HERE";
+        const owUrl = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${site.latitude}&lon=${site.longitude}&appid=${openWeatherApiKey}`;
         
-        // Intercept & Fallback: If 50 miles is empty, dynamically expand the net to 150 miles
-        if (!airNowResponse.data || airNowResponse.data.length === 0) {
-           console.log(`⚠️ AirNow returned no data within 50 miles for ${site.incidentName}. Dynamically expanding search to 150 miles...`);
-           airNowResponse = await axios.get(buildAirNowUrl(150));
-        }
-
-        // Process the data if either the 50-mile or 150-mile attempt succeeded
-        if (airNowResponse.data && airNowResponse.data.length > 0) {
-           liveAirNowAqi = Math.max(...airNowResponse.data.map((reading: any) => reading.AQI));
-           console.log(`✅ Success! ${site.incidentName} current AQI is: ${liveAirNowAqi}`);
+        const owResponse = await axios.get(owUrl);
+        
+        if (owResponse.data && owResponse.data.list && owResponse.data.list.length > 0) {
+           // Extract raw PM2.5 mass concentration value (micrograms per cubic meter)
+           const rawPM25 = owResponse.data.list[0].components.pm2_5;
+           
+           // Convert raw satellite particulate mass into the official legal US AQI index
+           liveAirNowAqi = convertPM25ToAQI(rawPM25);
+           
+           console.log(`✅ Success! OpenWeather satellite data mapped for ${site.incidentName}. Raw PM2.5: ${rawPM25} µg/m³ -> Computed AQI: ${liveAirNowAqi}`);
         } else {
-           console.log(`❌ AirNow completely missing station data for ${site.incidentName} after max 150-mile radius fallback.`);
+           console.log(`❌ OpenWeather returned an empty payload structure for coordinates ${site.latitude}, ${site.longitude}.`);
            continue; 
         }
       } catch (apiError: any) {
-        console.error(`❌ AirNow API connection failed for ${site.incidentName}:`, apiError.message);
+        console.error(`❌ OpenWeather API connection failed for ${site.incidentName}:`, apiError.message);
         continue; 
       }
 
@@ -181,6 +192,78 @@ async function runAirQualityCheck() {
   }
 }
 }
+
+// --- THE SIGN-UP PORTAL ---
+app.get('/signup', (req, res) => {
+  res.send(`
+    <html>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
+        <div style="background: white; padding: 3rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); width: 320px; text-align: center;">
+          <div style="text-align: center; margin-bottom: 2rem;">
+            <h1 style="color: #0275d8; font-size: 22px; margin: 0; letter-spacing: -0.5px;">Alert Air Wildfire Compliance</h1>
+            <p style="color: #6c757d; margin-top: 8px; margin-bottom: 0; font-size: 14px; font-weight: 500;">Contractor Registration</p>
+          </div>
+          <form action="/signup" method="POST" style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <input type="text" name="companyName" placeholder="Company Name" required style="padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
+            <input type="email" name="email" placeholder="Admin Email" required style="padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
+            <input type="password" name="password" placeholder="Create Password" required style="padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
+            <input type="text" name="adminPhone" placeholder="Admin Cell (10 Digits)" style="padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
+            <select name="adminCarrier" style="padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; background: white;">
+              <option value="">Select Admin Carrier...</option>
+              <option value="@vtext.com">Verizon</option>
+              <option value="@txt.att.net">AT&T</option>
+              <option value="@tmomail.net">T-Mobile</option>
+            </select>
+
+            <div style="display: flex; align-items: flex-start; gap: 0.5rem; text-align: left;">
+              <input 
+                type="checkbox" 
+                id="tos-checkbox" 
+                name="tosAccepted" 
+                value="true" 
+                required 
+                style="margin-top: 3px; cursor: pointer;" 
+                onchange="toggleSubmitButton()"
+              >
+              <label for="tos-checkbox" style="font-size: 12px; color: #6c757d; line-height: 1.4; cursor: pointer; user-select: none;">
+                I represent the corporate subscriber and explicitly agree to Alert Air's 
+                <a href="/terms" target="_blank" style="color: #0275d8; text-decoration: none; font-weight: bold;">Terms of Service</a> and 
+                <a href="/privacy" target="_blank" style="color: #0275d8; text-decoration: none; font-weight: bold;">Privacy Policy</a>, 
+                including Third-Party Data Accuracy Disclaimers.
+              </label>
+            </div>
+
+            <button 
+              type="submit" 
+              id="signup-btn" 
+              disabled 
+              style="background: #a0a0a0; color: white; border: none; padding: 12px; border-radius: 6px; cursor: not-allowed; font-weight: bold; font-size: 1rem; transition: background 0.2s ease;"
+            >
+              Create Account
+            </button>
+          </form>
+          <p style="margin-top: 1.5rem; font-size: 14px; color: #666;">Already registered? <a href="/login" style="color: #0275d8; text-decoration: none; font-weight: bold;">Login here</a></p>
+        </div>
+
+        <script>
+          function toggleSubmitButton() {
+            const checkbox = document.getElementById('tos-checkbox');
+            const submitBtn = document.getElementById('signup-btn');
+            if (checkbox.checked) {
+              submitBtn.disabled = false;
+              submitBtn.style.background = '#5cb85c';
+              submitBtn.style.cursor = 'pointer';
+            } else {
+              submitBtn.disabled = true;
+              submitBtn.style.background = '#a0a0a0';
+              submitBtn.style.cursor = 'not-allowed';
+            }
+          }
+        </script>
+      </body>
+    </html>
+  `);
+});
 
 // --- THE SIGN-UP PORTAL ---
 app.get('/signup', (req, res) => {
