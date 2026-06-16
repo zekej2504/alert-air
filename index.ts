@@ -63,25 +63,19 @@ app.use(session({
 
 // --- THE AUTOMATED ENGINE (SIMULATION MODE) ---
 async function runAirQualityCheck() {
-  const worksites = await prisma.worksite.findMany({
-    where: { isActive: true },
-    include: { company: true }
-  });
+  try {
+    // 1. Fetch active tracking records from your database
+    const activeWorksites = await prisma.worksite.findMany({
+      include: { company: true }
+    });
 
-  for (const site of worksites) {
-    try {
-      const stateLaw = await prisma.stateRegulation.findUnique({
-        where: { stateCode: site.state }
-      });
-
-      const voluntaryLimit = stateLaw?.voluntaryAqi || 151;
-      const mandatoryLimit = stateLaw?.mandatoryAqi || 9999; 
-
-// 1. Fetch Real Live AQI from the US Government API
-// 1. Fetch Real Live AQI from OpenWeather (Satellite/Grid Data)
+    for (const site of activeWorksites) {
+      // Scoped at the top of the loop so the entire iteration can see them
       let liveAirNowAqi = 0; 
-      
-      // Official US EPA Piecewise Linear Function to map raw PM2.5 (µg/m³) to standard AQI (0-500)
+      const voluntaryLimit = 151; 
+      const mandatoryLimit = 200;
+
+      // Piecewise Linear Function to map raw PM2.5 (µg/m³) to standard AQI (0-500)
       const convertPM25ToAQI = (pm25: number): number => {
         if (pm25 < 0) return 0;
         if (pm25 <= 12.0)  return Math.round(((50 - 0)   / (12.0 - 0))   * (pm25 - 0)   + 0);
@@ -91,34 +85,62 @@ async function runAirQualityCheck() {
         if (pm25 <= 250.4) return Math.round(((300 - 201) / (250.4 - 150.5)) * (pm25 - 150.5) + 201);
         if (pm25 <= 350.4) return Math.round(((400 - 301) / (350.4 - 250.5)) * (pm25 - 250.5) + 301);
         if (pm25 <= 500.4) return Math.round(((500 - 401) / (500.4 - 350.5)) * (pm25 - 350.5) + 401);
-        return 500; // Cap at max hazard index
+        return 500;
       };
 
       try {
-        // We call OpenWeather's Air Pollution API (uses your environment variable or a clean key)
-        const openWeatherApiKey = process.env.OPENWEATHER_API_KEY || "38a51bef7303563ec437e8fd61b45b3d";
-        const owUrl = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${site.latitude}&lon=${site.longitude}&appid=${openWeatherApiKey}`;
+        const purpleAirKey = process.env.PURPLEAIR_API_KEY;
+        if (!purpleAirKey) {
+          console.error("❌ PURPLEAIR_API_KEY environment variable is missing!");
+          continue;
+        }
+
+        // Define corners for the protective ~12-mile bounding box safety net around the crew
+        const geoOffset = 0.15; 
+        const nwlat = site.latitude + geoOffset;
+        const nwlng = site.longitude - geoOffset;
+        const selat = site.latitude - geoOffset;
+        const selng = site.longitude + geoOffset;
+
+        const paUrl = `https://api.purpleair.com/v1/sensors?fields=pm2.5_atm,humidity&location_type=0&nwlat=${nwlat}&nwlng=${nwlng}&selat=${selat}&selng=${selng}`;
+        const paResponse = await axios.get(paUrl, {
+          headers: { 'X-API-Key': purpleAirKey }
+        });
         
-        const owResponse = await axios.get(owUrl);
-        
-        if (owResponse.data && owResponse.data.list && owResponse.data.list.length > 0) {
-           // Extract raw PM2.5 mass concentration value (micrograms per cubic meter)
-           const rawPM25 = owResponse.data.list[0].components.pm2_5;
-           
-           // Convert raw satellite particulate mass into the official legal US AQI index
-           liveAirNowAqi = convertPM25ToAQI(rawPM25);
-           
-           console.log(`✅ Success! OpenWeather satellite data mapped for ${site.incidentName}. Raw PM2.5: ${rawPM25} µg/m³ -> Computed AQI: ${liveAirNowAqi}`);
+        if (paResponse.data && paResponse.data.data && paResponse.data.data.length > 0) {
+           const fields = paResponse.data.fields;
+           const pm25Idx = fields.indexOf('pm2.5_atm');
+           const humidityIdx = fields.indexOf('humidity');
+           let maxCalculatedAqi = 0;
+
+           for (const sensor of paResponse.data.data) {
+             const rawPm25 = sensor[pm25Idx];
+             const humidity = sensor[humidityIdx] || 50;
+             if (rawPm25 === null || rawPm25 === undefined) continue;
+
+             // Apply official US EPA correction formula to settle out humidity laser drift
+             const correctedPm25 = 0.524 * rawPm25 - 0.0852 * humidity + 5.71;
+             const finalSensorPm25 = Math.max(0, correctedPm25);
+             const sensorAqi = convertPM25ToAQI(finalSensorPm25);
+             
+             if (sensorAqi > maxCalculatedAqi) {
+               maxCalculatedAqi = sensorAqi;
+             }
+           }
+           liveAirNowAqi = maxCalculatedAqi;
+           console.log(`📡 Success! PurpleAir cluster parsed for ${site.incidentName}. Worst-Case Vector: ${liveAirNowAqi} AQI`);
         } else {
-           console.log(`❌ OpenWeather returned an empty payload structure for coordinates ${site.latitude}, ${site.longitude}.`);
-           continue; 
+           console.log(`⚠️ No active PurpleAir sensors found inside the safety box for ${site.incidentName}. Defaulting to safe baseline.`);
+           liveAirNowAqi = 0; 
         }
       } catch (apiError: any) {
-        console.error(`❌ OpenWeather API connection failed for ${site.incidentName}:`, apiError.message);
+        console.error(`❌ PurpleAir API network execution failed for ${site.incidentName}:`, apiError.message);
         continue; 
       }
 
-      // 1. Determine exact litigation status and threshold matched
+      // ==========================================
+      // COMPLIANCE & NOTIFICATION ENGINE
+      // ==========================================
       let alertLevel = "SAFE";
       let applicableThreshold = voluntaryLimit;
 
@@ -130,15 +152,11 @@ async function runAirQualityCheck() {
         applicableThreshold = voluntaryLimit;
       }
 
-      // --- THE ANTI-SPAM CHECK (EDGE TRIGGERING) ---
-      // Look up the most recent log for this exact worksite before we save the new one
       const lastLog = await prisma.hourlyAirLog.findFirst({
         where: { worksiteId: site.id },
-        orderBy: { timestamp: 'desc' } // Gets the most recent entry
+        orderBy: { timestamp: 'desc' }
       });
 
-// 2. PERMANENT RECORDARY INSULATION: Save every check to database
-      // 🛠️ FIX: Capture the created log item in a variable so we can read its ID
       const newLog = await prisma.hourlyAirLog.create({
         data: {
           worksiteId: site.id,
@@ -148,50 +166,44 @@ async function runAirQualityCheck() {
         }
       });
 
-      // --- ESCALATION LOGIC ---
       const isNewEscalation = !lastLog || lastLog.status !== alertLevel;
 
-      // 3. Fire notification alerts ONLY if a threshold is broken AND it just changed
-    if (alertLevel !== "SAFE" && isNewEscalation) {
-      try {
-        // 🛠️ FIX: Dynamically pass BOTH the site ID and the specific log ID to the high-end signature pad link
-        let smsSubject = "SMOKE ALERT";
-        let smsText = `AQI at ${site.incidentName} is ${liveAirNowAqi}. Smoke is getting heavy. N95 masks are available for voluntary use. Grab masks for interested crew and sign off here: https://alert-air-ezio.onrender.com/signoff/${site.id}/${newLog.id}`;
+      if (alertLevel !== "SAFE" && isNewEscalation) {
+        try {
+          let smsSubject = "SMOKE ALERT";
+          let smsText = `AQI at ${site.incidentName} is ${liveAirNowAqi}. Smoke is getting heavy. N95 masks are available for voluntary use. Grab masks for interested crew and sign off here: https://alert-air-ezio.onrender.com/signoff/${site.id}/${newLog.id}`;
 
-        if (alertLevel === "MANDATORY") {
-          smsSubject = "SAFETY MANDATE";
-          smsText = `CRITICAL: AQI at ${site.incidentName} hit ${liveAirNowAqi}. N95 masks are now MANDATORY for all personnel on site. Distribute masks immediately and log compliance here: https://alert-air-ezio.onrender.com/signoff/${site.id}/${newLog.id}`;
-        }
+          if (alertLevel === "MANDATORY") {
+            smsSubject = "SAFETY MANDATE";
+            smsText = `CRITICAL: AQI at ${site.incidentName} hit ${liveAirNowAqi}. N95 masks are now MANDATORY for all personnel on site. Distribute masks immediately and log compliance here: https://alert-air-ezio.onrender.com/signoff/${site.id}/${newLog.id}`;
+          }
 
-        // SMS to Crew Lead
-        await transporter.sendMail({
-          from: '"Alert Air Compliance" <compliance.alertair@gmail.com>',
-          to: `${site.foremanPhone}${site.carrier}`,
-          subject: smsSubject,
-          text: smsText
-        });
-
-        // SMS to Admin
-        if (site.company.adminPhone && site.company.adminCarrier) {
           await transporter.sendMail({
             from: '"Alert Air Compliance" <compliance.alertair@gmail.com>',
-            to: `${site.company.adminPhone}${site.company.adminCarrier}`,
-            subject: 'CREW ALERT DISPATCHED',
-            text: `ADMIN ALERT: ${smsSubject} sent to crew at ${site.incidentName} (${liveAirNowAqi} AQI). Awaiting foreman sign-off.`
+            to: `${site.foremanPhone}${site.carrier}`,
+            subject: smsSubject,
+            text: smsText
           });
+
+          if (site.company.adminPhone && site.company.adminCarrier) {
+            await transporter.sendMail({
+              from: '"Alert Air Compliance" <compliance.alertair@gmail.com>',
+              to: `${site.company.adminPhone}${site.company.adminCarrier}`,
+              subject: 'CREW ALERT DISPATCHED',
+              text: `ADMIN ALERT: ${smsSubject} sent to crew at ${site.incidentName} (${liveAirNowAqi} AQI). Awaiting foreman sign-off.`
+            });
+          }
+          console.log(`📱 Alerts cleanly dispatched for ${site.incidentName} [Status: ${alertLevel}]`);
+        } catch (emailError) {
+          console.error(`❌ Failed to send gateway SMS:`, emailError);
         }
-        console.log(`📱 Alerts cleanly dispatched for ${site.incidentName} [Status: ${alertLevel}]`);
-      } catch (emailError) {
-        console.error(`❌ Failed to send gateway SMS:`, emailError);
+      } else if (alertLevel !== "SAFE" && !isNewEscalation) {
+        console.log(`🔇 Suppressed duplicate text for ${site.incidentName}. Status remains ${alertLevel}.`);
       }
-    } else if (alertLevel !== "SAFE" && !isNewEscalation) {
-      // Silently log that we suppressed a duplicate text
-      console.log(`🔇 Suppressed duplicate text for ${site.incidentName}. Status remains ${alertLevel}.`);
-    }
+    } // Closes the 'for (const site of activeWorksites)' loop
   } catch (error) {
-    console.error(`❌ Failed to process site ${site.incidentName}:`, error);
+    console.error('❌ Critical failure in sync initialization:', error);
   }
-}
 }
 
 // --- THE SIGN-UP PORTAL ---
