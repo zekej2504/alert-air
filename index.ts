@@ -1,3 +1,6 @@
+// Tracking timestamp to gate heavy API data synchronization loops
+let lastHeavySyncTime = 0;
+
 import 'dotenv/config';
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
@@ -472,23 +475,31 @@ app.post('/api/worksite', async (req, res) => {
 
 // ⏰ SECURE BACKGROUND CRON TRIGGER ENDPOINT
 app.get('/api/cron-trigger', async (req, res) => {
-  const { secret } = req.query;
-
-  // Security firewall to prevent unauthorized execution
+  // (Keep whatever secret validation code you already have here)
+  const secret = req.query.secret;
   if (secret !== 'alert_air_secure_heartbeat_2026') {
-    console.warn('⚠️ Unauthorized cron trigger attempt detected.');
-    return res.status(401).send('Unauthorized trigger attempt.');
+    return res.status(401).send('Unauthorized');
   }
 
-  console.log('⚡ External cron heartbeat validated. Executing air quality sync...');
-  
+  const currentTime = Date.now();
+  const fiftyFiveMinutesInMs = 55 * 60 * 1000; // 55 minutes threshold to catch the closest 14-min interval
+
+  // Check if enough time has passed since the last heavy live API run
+  if (currentTime - lastHeavySyncTime < fiftyFiveMinutesInMs) {
+    console.log('☕ Keep-warm ping received. Server is active, skipping heavy API calls to save rate limits.');
+    return res.status(200).send('Keep-warm ping successful. Data sync throttled.');
+  }
+
+  // If 55+ minutes have passed, update the tracker timestamp and fire the core engines
+  lastHeavySyncTime = currentTime;
+  console.log('⚡ Time threshold cleared! Executing live air quality sync pipeline...');
+
   try {
-    // Triggers your existing automated tracking loop
-    await runAirQualityCheck(); 
-    return res.status(200).send('Compliance data synchronization complete.');
+    await runAirQualityCheck();
+    return res.status(200).send('Air quality tracking sync executed successfully.');
   } catch (error) {
-    console.error('❌ Automated compliance cron execution failed:', error);
-    return res.status(500).send('Internal compliance engine error.');
+    console.error('CRITICAL: Cron synchronization failure:', error);
+    return res.status(500).send('Internal pipeline synchronization failure.');
   }
 });
 
