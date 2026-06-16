@@ -1109,9 +1109,9 @@ app.get('/admin/audit', async (req, res) => {
         include: { company: true }
       });
 
-      tableRows += `
+ tableRows += `
         <tr style="border-bottom: 1px solid #e0e0e0;">
-          <td style="padding: 12px; color: #555;">${new Date(log.createdAt).toLocaleString()}</td>
+          <td style="padding: 12px; color: #555;">${new Date(log.createdAt).toLocaleString('en-US', { timeZone: 'America/Los_Angeles' })}</td>
           <td style="padding: 12px; font-weight: bold;">${worksite?.company?.name || 'Unknown'}</td>
           <td style="padding: 12px;">${worksite?.incidentName || 'N/A'} (${worksite?.state || 'N/A'})</td>
           <td style="padding: 12px;">${worksite?.crewLeadName || 'Unknown'}</td>
@@ -1180,7 +1180,7 @@ app.get('/admin/worksite/:id/logs', async (req, res) => {
       <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 12px;">
           <strong style="color: #10b981; font-size: 18px;">✅ Verified Compliant</strong>
-          <span style="color: #64748b; font-size: 14px; font-weight: 500;">${new Date(log.createdAt).toLocaleString()}</span>
+          <span style="color: #64748b; font-size: 14px; font-weight: 500;">${new Date(log.createdAt).toLocaleString('en-US', { timeZone: 'America/Los_Angeles' })}</span>
         </div>
         <div style="color: #334155; font-size: 15px; line-height: 1.6; display: grid; grid-template-columns: 1fr; gap: 10px;">
           <div><strong>Authorized Lead:</strong> ${worksite.crewLeadName}</div>
@@ -1240,11 +1240,11 @@ app.get('/admin/litigation-records', async (req, res) => {
       site.hourlyLogs.map(log => ({ ...log, incidentName: site.incidentName, state: site.state }))
     ).sort((a,b) => b.timestamp.getTime() - a.timestamp.getTime());
 
-    const dynamicExceedingRows = allLogs
+const dynamicExceedingRows = allLogs
       .filter(l => l.status !== 'SAFE')
       .map(l => `
         <tr style="border-bottom: 1px solid #e2e8f0;">
-          <td style="padding: 12px 16px;">${new Date(l.timestamp).toLocaleString()}</td>
+          <td style="padding: 12px 16px;">${new Date(l.timestamp).toLocaleString('en-US', { timeZone: 'America/Los_Angeles' })}</td>
           <td style="padding: 12px 16px;"><strong>${l.incidentName} (${l.state})</strong></td>
           <td style="padding: 12px 16px; color: #dc2626; font-weight: bold;">${l.aqi} AQI</td>
           <td style="padding: 12px 16px;"><span style="background: #fef2f2; color: #991b1b; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${l.status} EXCEEDED</span></td>
@@ -1256,7 +1256,7 @@ app.get('/admin/litigation-records', async (req, res) => {
       .filter(l => l.status === 'SAFE')
       .map(l => `
         <tr style="border-bottom: 1px solid #e2e8f0;">
-          <td style="padding: 12px 16px;">${new Date(l.timestamp).toLocaleString()}</td>
+          <td style="padding: 12px 16px;">${new Date(l.timestamp).toLocaleString('en-US', { timeZone: 'America/Los_Angeles' })}</td>
           <td style="padding: 12px 16px;"><strong>${l.incidentName} (${l.state})</strong></td>
           <td style="padding: 12px 16px; color: #16a34a; font-weight: bold;">${l.aqi} AQI</td>
           <td style="padding: 12px 16px;"><span style="background: #f0fdf4; color: #166534; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">DUTY VERIFIED</span></td>
