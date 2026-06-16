@@ -130,11 +130,24 @@ async function runAirQualityCheck() {
            liveAirNowAqi = maxCalculatedAqi;
            console.log(`📡 Success! PurpleAir cluster parsed for ${site.incidentName}. Worst-Case Vector: ${liveAirNowAqi} AQI`);
         } else {
-           console.log(`⚠️ No active PurpleAir sensors found inside the safety box for ${site.incidentName}. Defaulting to safe baseline.`);
-           liveAirNowAqi = 0; 
+           // 🔄 TIER 2 AUTOMATIC REGIONAL FALLBACK
+           console.log(`⚠️ No active PurpleAir hardware inside safety zone for ${site.incidentName}. Activating OpenWeather macro fallback...`);
+           
+           const openWeatherApiKey = process.env.OPENWEATHER_API_KEY || "38a51bef7303563ec437e8fd61b45b3d";
+           const owUrl = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${site.latitude}&lon=${site.longitude}&appid=${openWeatherApiKey}`;
+           
+           const owResponse = await axios.get(owUrl);
+           
+           if (owResponse.data && owResponse.data.list && owResponse.data.list.length > 0) {
+              const rawPM25 = owResponse.data.list[0].components.pm2_5;
+              liveAirNowAqi = convertPM25ToAQI(rawPM25);
+              console.log(`🔄 Fallback Verified! Macro regional metrics mapped for ${site.incidentName}. AirNow Computed Value: ${liveAirNowAqi} AQI`);
+           } else {
+              liveAirNowAqi = 0;
+           }
         }
       } catch (apiError: any) {
-        console.error(`❌ PurpleAir API network execution failed for ${site.incidentName}:`, apiError.message);
+        console.error(`❌ Environmental data pipeline failed for ${site.incidentName}:`, apiError.message);
         continue; 
       }
 
