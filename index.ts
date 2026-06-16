@@ -32,14 +32,16 @@ const prisma = new PrismaClient();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 // --- AUTO-SEED LEGAL THRESHOLDS (THE AMERICAN WEST) ---
   const laws = [
-    // States with specific wildfire smoke standards
-    { stateCode: "OR", maxAqi: 101 }, // Oregon OSHA standard
-    { stateCode: "CA", maxAqi: 151 }, // Cal/OSHA standard
-    { stateCode: "WA", maxAqi: 151 }, // Washington L&I standard
+    // States with strict statutory wildfire smoke standards
+    { stateCode: "WA", maxAqi: 69 },   // Washington L&I: Voluntary starts early at 69
+    { stateCode: "OR", maxAqi: 101 },  // Oregon OSHA: Voluntary N95s required at 101
+    { stateCode: "NV", maxAqi: 150 },  // Nevada OSHA (SB 260): Action tier triggers at 150
+    { stateCode: "CA", maxAqi: 151 },  // Cal/OSHA: Action level triggers at 151
     
-    // States defaulting to the Federal OSHA/EPA standard
+    // States defaulting to the Federal OSHA/EPA General Duty baseline (151 = Unhealthy)
     { stateCode: "MT", maxAqi: 151 },
     { stateCode: "WY", maxAqi: 151 },
     { stateCode: "CO", maxAqi: 151 },
@@ -47,7 +49,6 @@ app.use(express.urlencoded({ extended: true }));
     { stateCode: "ID", maxAqi: 151 },
     { stateCode: "UT", maxAqi: 151 },
     { stateCode: "AZ", maxAqi: 151 },
-    { stateCode: "NV", maxAqi: 151 },
     { stateCode: "AK", maxAqi: 151 },
     { stateCode: "HI", maxAqi: 151 }
   ];
@@ -136,8 +137,9 @@ async function runAirQualityCheck() {
         orderBy: { timestamp: 'desc' } // Gets the most recent entry
       });
 
-      // 2. PERMANENT RECORDARY INSULATION: Save every check to database
-      await prisma.hourlyAirLog.create({
+// 2. PERMANENT RECORDARY INSULATION: Save every check to database
+      // 🛠️ FIX: Capture the created log item in a variable so we can read its ID
+      const newLog = await prisma.hourlyAirLog.create({
         data: {
           worksiteId: site.id,
           aqi: liveAirNowAqi,
@@ -147,19 +149,18 @@ async function runAirQualityCheck() {
       });
 
       // --- ESCALATION LOGIC ---
-      // We only want to send a text if the alert level is dangerous AND it is a newly escalated status
       const isNewEscalation = !lastLog || lastLog.status !== alertLevel;
 
       // 3. Fire notification alerts ONLY if a threshold is broken AND it just changed
     if (alertLevel !== "SAFE" && isNewEscalation) {
       try {
-        // Set up plain-English messaging based on the severity level
+        // 🛠️ FIX: Dynamically pass BOTH the site ID and the specific log ID to the high-end signature pad link
         let smsSubject = "SMOKE ALERT";
-        let smsText = `AQI at ${site.incidentName} is ${liveAirNowAqi}. Smoke is getting heavy. N95 masks are available for anyone who wants one—wearing them is VOLUNTARY right now. Grab masks for interested crew and sign off here: https://alert-air-ezio.onrender.com/signoff/${site.id}`;
+        let smsText = `AQI at ${site.incidentName} is ${liveAirNowAqi}. Smoke is getting heavy. N95 masks are available for voluntary use. Grab masks for interested crew and sign off here: https://alert-air-ezio.onrender.com/signoff/${site.id}/${newLog.id}`;
 
         if (alertLevel === "MANDATORY") {
           smsSubject = "SAFETY MANDATE";
-          smsText = `CRITICAL: AQI at ${site.incidentName} hit ${liveAirNowAqi}. Air quality is hazardous. N95 masks are now MANDATORY for all personnel on site. Distribute masks immediately and log compliance here: https://alert-air-ezio.onrender.com/signoff/${site.id}`;
+          smsText = `CRITICAL: AQI at ${site.incidentName} hit ${liveAirNowAqi}. N95 masks are now MANDATORY for all personnel on site. Distribute masks immediately and log compliance here: https://alert-air-ezio.onrender.com/signoff/${site.id}/${newLog.id}`;
         }
 
         // SMS to Crew Lead
@@ -192,78 +193,6 @@ async function runAirQualityCheck() {
   }
 }
 }
-
-// --- THE SIGN-UP PORTAL ---
-app.get('/signup', (req, res) => {
-  res.send(`
-    <html>
-      <body style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
-        <div style="background: white; padding: 3rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); width: 320px; text-align: center;">
-          <div style="text-align: center; margin-bottom: 2rem;">
-            <h1 style="color: #0275d8; font-size: 22px; margin: 0; letter-spacing: -0.5px;">Alert Air Wildfire Compliance</h1>
-            <p style="color: #6c757d; margin-top: 8px; margin-bottom: 0; font-size: 14px; font-weight: 500;">Contractor Registration</p>
-          </div>
-          <form action="/signup" method="POST" style="display: flex; flex-direction: column; gap: 1.5rem;">
-            <input type="text" name="companyName" placeholder="Company Name" required style="padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
-            <input type="email" name="email" placeholder="Admin Email" required style="padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
-            <input type="password" name="password" placeholder="Create Password" required style="padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
-            <input type="text" name="adminPhone" placeholder="Admin Cell (10 Digits)" style="padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
-            <select name="adminCarrier" style="padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; background: white;">
-              <option value="">Select Admin Carrier...</option>
-              <option value="@vtext.com">Verizon</option>
-              <option value="@txt.att.net">AT&T</option>
-              <option value="@tmomail.net">T-Mobile</option>
-            </select>
-
-            <div style="display: flex; align-items: flex-start; gap: 0.5rem; text-align: left;">
-              <input 
-                type="checkbox" 
-                id="tos-checkbox" 
-                name="tosAccepted" 
-                value="true" 
-                required 
-                style="margin-top: 3px; cursor: pointer;" 
-                onchange="toggleSubmitButton()"
-              >
-              <label for="tos-checkbox" style="font-size: 12px; color: #6c757d; line-height: 1.4; cursor: pointer; user-select: none;">
-                I represent the corporate subscriber and explicitly agree to Alert Air's 
-                <a href="/terms" target="_blank" style="color: #0275d8; text-decoration: none; font-weight: bold;">Terms of Service</a> and 
-                <a href="/privacy" target="_blank" style="color: #0275d8; text-decoration: none; font-weight: bold;">Privacy Policy</a>, 
-                including Third-Party Data Accuracy Disclaimers.
-              </label>
-            </div>
-
-            <button 
-              type="submit" 
-              id="signup-btn" 
-              disabled 
-              style="background: #a0a0a0; color: white; border: none; padding: 12px; border-radius: 6px; cursor: not-allowed; font-weight: bold; font-size: 1rem; transition: background 0.2s ease;"
-            >
-              Create Account
-            </button>
-          </form>
-          <p style="margin-top: 1.5rem; font-size: 14px; color: #666;">Already registered? <a href="/login" style="color: #0275d8; text-decoration: none; font-weight: bold;">Login here</a></p>
-        </div>
-
-        <script>
-          function toggleSubmitButton() {
-            const checkbox = document.getElementById('tos-checkbox');
-            const submitBtn = document.getElementById('signup-btn');
-            if (checkbox.checked) {
-              submitBtn.disabled = false;
-              submitBtn.style.background = '#5cb85c';
-              submitBtn.style.cursor = 'pointer';
-            } else {
-              submitBtn.disabled = true;
-              submitBtn.style.background = '#a0a0a0';
-              submitBtn.style.cursor = 'not-allowed';
-            }
-          }
-        </script>
-      </body>
-    </html>
-  `);
-});
 
 // --- THE SIGN-UP PORTAL ---
 app.get('/signup', (req, res) => {
@@ -447,7 +376,7 @@ app.post('/signup', async (req, res) => {
 
   // 5. Log them in instantly and send them to the dashboard
   req.session.companyId = newCompany.id;
-  res.redirect('/admin/litigation-records');
+res.redirect('/admin');
 });
 
 // --- THE LOGIN PORTAL ---
@@ -841,25 +770,36 @@ try {
   }
 });
 
-// --- TEMPORARY ROUTE: INJECT STATE LAWS INTO DATABASE ---
+// // --- TEMPORARY ROUTE: INJECT STATE LAWS INTO DATABASE ---
 app.get('/admin/seed-laws', async (req, res) => {
-  await prisma.stateRegulation.createMany({
-    data: [
-      { stateCode: 'CA', voluntaryAqi: 151, mandatoryAqi: 501 },
-      { stateCode: 'OR', voluntaryAqi: 101, mandatoryAqi: 251 },
-      { stateCode: 'WA', voluntaryAqi: 69,  mandatoryAqi: 101 },
-      { stateCode: 'NV', voluntaryAqi: 151, mandatoryAqi: null },
-      { stateCode: 'ID', voluntaryAqi: 151, mandatoryAqi: null },
-      { stateCode: 'MT', voluntaryAqi: 151, mandatoryAqi: null },
-      { stateCode: 'UT', voluntaryAqi: 151, mandatoryAqi: null },
-      { stateCode: 'AZ', voluntaryAqi: 151, mandatoryAqi: null },
-      { stateCode: 'CO', voluntaryAqi: 151, mandatoryAqi: null },
-      { stateCode: 'WY', voluntaryAqi: 151, mandatoryAqi: null },
-      { stateCode: 'NM', voluntaryAqi: 151, mandatoryAqi: null },
-    ],
-    skipDuplicates: true // Prevents errors if you run it twice
+  try {
+    await prisma.stateRegulation.createMany({
+      data: [
+        // --- STATUTORY LEGISLATIVE PLANS ---
+        { stateCode: 'WA', voluntaryAqi: 69,  mandatoryAqi: 101 }, // WA L&I: Voluntary at 69, Mandatory at 101
+        { stateCode: 'OR', voluntaryAqi: 101, mandatoryAqi: 251 }, // OR-OSHA: Voluntary at 101, Mandatory at 251
+        { stateCode: 'NV', voluntaryAqi: 150, mandatoryAqi: 500 }, // NV OSHA (SB 260): Action at 150, Critical work halt at 500
+        { stateCode: 'CA', voluntaryAqi: 151, mandatoryAqi: 501 }, // Cal/OSHA: Voluntary at 151, Mandatory at 501
+        
+        // --- FEDERAL OSHA PLANS (General Duty Baseline) ---
+        // Seeding null for mandatory fallback keeps these states strictly on a voluntary advisory track
+        { stateCode: 'ID', voluntaryAqi: 151, mandatoryAqi: null },
+        { stateCode: 'MT', voluntaryAqi: 151, mandatoryAqi: null },
+        { stateCode: 'UT', voluntaryAqi: 151, mandatoryAqi: null },
+        { stateCode: 'AZ', voluntaryAqi: 151, mandatoryAqi: null },
+        { stateCode: 'CO', voluntaryAqi: 151, mandatoryAqi: null },
+        { stateCode: 'WY', voluntaryAqi: 151, mandatoryAqi: null },
+        { stateCode: 'NM', voluntaryAqi: 151, mandatoryAqi: null },
+        { stateCode: 'AK', voluntaryAqi: 151, mandatoryAqi: null },
+        { stateCode: 'HI', voluntaryAqi: 151, mandatoryAqi: null },
+      ],
+      skipDuplicates: true 
   });
-  res.send("<h1 style='color: green; font-family: sans-serif; text-align: center; margin-top: 3rem;'>✅ State Laws Injected Successfully!</h1>");
+    res.send("<h1 style='color: green; font-family: sans-serif; text-align: center; margin-top: 3rem;'>✅ State Laws Injected Successfully!</h1>");
+  } catch (error) {
+    console.error("Failed to seed database laws:", error);
+    res.status(500).send("Internal server error seeding regulations.");
+  }
 });
 
 // --- THE AUDIT DASHBOARD ---
@@ -1220,45 +1160,50 @@ app.get('/admin/worksite/:id/logs', async (req, res) => {
   }
 
   try {
-    // 2. Fetch the specific worksite and all of its compliance sign-offs
+    // 2. Fetch the specific worksite parameters
     const worksite = await prisma.worksite.findUnique({
-      where: { id: req.params.id },
-      include: { 
-        signOffs: { orderBy: { timestamp: 'desc' } } 
-      }
+      where: { id: req.params.id }
     });
 
     if (!worksite) {
       return res.status(404).send("Worksite not found.");
     }
 
-// 3. Build the individual HTML cards for each log
-    const logCards = worksite.signOffs.map(log => `
+    // 3. Fetch the cryptographic canvas sign-offs explicitly tied to this worksite
+    const canvasLogs = await prisma.complianceSignoff.findMany({
+      where: { worksiteId: worksite.id },
+      orderBy: { createdAt: 'desc' } // Newest secure signatures first
+    });
+
+    // 4. Build the individual HTML cards using canvas ledger fields (createdAt & signatureHash)
+    const logCards = canvasLogs.map(log => `
       <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 12px;">
           <strong style="color: #10b981; font-size: 18px;">✅ Verified Compliant</strong>
-          <span style="color: #64748b; font-size: 14px; font-weight: 500;">${new Date(log.timestamp).toLocaleString()}</span>
+          <span style="color: #64748b; font-size: 14px; font-weight: 500;">${new Date(log.createdAt).toLocaleString()}</span>
         </div>
-        <div style="color: #334155; font-size: 15px; line-height: 1.6; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-          <div><strong>Signatory:</strong> ${log.signature || worksite.crewLeadName}</div>
-          <div><strong>Phone:</strong> ${worksite.foremanPhone}</div>
-          <div><strong>AQI at Time of Alert:</strong> <span style="color: #eab308; font-weight: bold;">Threshold Exceeded</span></div>
+        <div style="color: #334155; font-size: 15px; line-height: 1.6; display: grid; grid-template-columns: 1fr; gap: 10px;">
+          <div><strong>Authorized Lead:</strong> ${worksite.crewLeadName}</div>
+          <div><strong>Phone Account:</strong> ${worksite.foremanPhone}</div>
           <div><strong>Coordinates:</strong> ${worksite.latitude}, ${worksite.longitude}</div>
+          <div style="grid-column: 1 / -1; word-break: break-all;">
+            <strong>Cryptographic Signature Hash:</strong> <code style="color: #d63384; font-family: monospace; font-size: 0.9rem;">${log.signatureHash}</code>
+          </div>
           <div style="grid-column: 1 / -1; margin-top: 8px; background: #f8fafc; padding: 10px; border-radius: 6px; border-left: 3px solid #3b82f6;">
-            <strong>Mandate Enforced:</strong> N95 Respirators Distributed & Mandatory Work/Rest Cycles Initiated.
+            <strong>Mandate Enforced:</strong> On-site wildfire smoke tracking entry sealed. N95 personal protective equipment distribution confirmed.
           </div>
         </div>
       </div>
     `).join('');
 
-    // 4. Send the Full Page HTML
+    // 5. Send the Full Page HTML
     res.send(`
       <html>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f7f6; padding: 3rem; color: #333; margin: 0;">
           <div style="max-width: 800px; margin: 0 auto;">
             <a href="/admin" style="display: inline-block; text-decoration: none; color: #3b82f6; font-weight: bold; margin-bottom: 20px;">&larr; Back to Command Center</a>
             
-            <div style="background: white; padding: 3rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+            <div style="background: white; padding: 3rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border-top: 6px solid #3b82f6;">
               <h1 style="color: #0f172a; margin-top: 0; font-size: 28px;">Immutable Audit Ledger</h1>
               <p style="color: #64748b; font-size: 16px; margin-top: 5px;"><strong>Incident:</strong> ${worksite.incidentName} | <strong>Status:</strong> ${worksite.isActive ? '🟢 Active' : '⚪ Demobilized'}</p>
               
@@ -1275,7 +1220,9 @@ app.get('/admin/worksite/:id/logs', async (req, res) => {
     console.error("Error loading logs page:", error);
     res.status(500).send("Error loading audit ledger.");
   }
-});// --- TABBED LITIGATION REPOSITORY ---
+});
+
+// --- TABBED LITIGATION REPOSITORY ---
 app.get('/admin/litigation-records', async (req, res) => {
   if (!req.session.companyId) return res.redirect('/login');
 
@@ -1432,17 +1379,15 @@ app.get('/admin/archive/export', async (req: any, res: any) => {
     // 3. Define headers
     let csvContent = 'Timestamp,Worksite Name,State,Recorded AQI,Status\n';
 
-    // 4. Iterate through rows using confirmed schema properties
+ // 4. Iterate through rows using confirmed schema properties
     for (const log of logs) {
       const timestamp = log.timestamp ? log.timestamp.toISOString().replace(/T/, ' ').replace(/\..+/, '') : 'N/A';
       const siteName = log.worksite?.incidentName ? log.worksite.incidentName.replace(/,/g, ' ') : 'Unknown Site';
       const state = log.worksite?.state || 'N/A';
       const aqiDisplay = log.aqi ?? 'N/A';
 
-      // Check the raw numeric type directly to satisfy the compiler
-      const severity = typeof log.aqi === 'number'
-        ? (log.aqi >= 101 ? 'MANDATORY' : log.aqi >= 69 ? 'VOLUNTARY' : 'SAFE')
-        : 'UNKNOWN';
+      // 🛠️ FIX: Pull the actual authenticated legal status straight from the ledger record
+      const severity = log.status || 'UNKNOWN';
       
       csvContent += `${timestamp},${siteName},${state},${aqiDisplay},${severity}\n`;
     }
