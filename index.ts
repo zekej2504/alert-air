@@ -96,7 +96,7 @@ async function runAirQualityCheck() {
 
       try {
         // We call OpenWeather's Air Pollution API (uses your environment variable or a clean key)
-        const openWeatherApiKey = process.env.OPENWEATHER_API_KEY || "YOUR_OPENWEATHER_KEY_HERE";
+        const openWeatherApiKey = process.env.OPENWEATHER_API_KEY || "38a51bef7303563ec437e8fd61b45b3d";
         const owUrl = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${site.latitude}&lon=${site.longitude}&appid=${openWeatherApiKey}`;
         
         const owResponse = await axios.get(owUrl);
