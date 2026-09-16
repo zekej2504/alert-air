@@ -1,0 +1,16 @@
+name: Alert Air Hourly Heartbeat
+
+on:
+  schedule:
+    # Runs at the top of every hour
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping-render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Alert Air Endpoint (Cold-Start Tolerant)
+        run: |
+          curl -L --connect-timeout 60 --max-time 180 --retry 3 --retry-delay 10 \
+          "https://alert-air-ezio.onrender.com/api/cron-trigger?secret=alert_air_secure_heartbeat_2026"
