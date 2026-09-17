@@ -1,6 +1,3 @@
-// Tracking timestamp to gate heavy API data synchronization loops
-let lastHeavySyncTime = 0;
-
 import 'dotenv/config';
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
@@ -481,18 +478,7 @@ app.get('/api/cron-trigger', async (req, res) => {
     return res.status(401).send('Unauthorized');
   }
 
-  const currentTime = Date.now();
-  const fiftyFiveMinutesInMs = 55 * 60 * 1000; // 55 minutes threshold to catch the closest 14-min interval
-
-  // Check if enough time has passed since the last heavy live API run
-  if (currentTime - lastHeavySyncTime < fiftyFiveMinutesInMs) {
-    console.log('☕ Keep-warm ping received. Server is active, skipping heavy API calls to save rate limits.');
-    return res.status(200).send('Keep-warm ping successful. Data sync throttled.');
-  }
-
-  // If 55+ minutes have passed, update the tracker timestamp and fire the core engines
-  lastHeavySyncTime = currentTime;
-  console.log('⚡ Time threshold cleared! Executing live air quality sync pipeline...');
+console.log('⚡ Heartbeat received from GitHub Actions. Executing live air quality sync...');
 
   try {
     await runAirQualityCheck();
