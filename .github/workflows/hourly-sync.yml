@@ -2,8 +2,8 @@ name: Alert Air Hourly Heartbeat
 
 on:
   schedule:
-    # Runs at the top of every hour
-    - cron: '0 * * * *'
+    # Runs at 15 minutes past every hour to avoid global GitHub traffic jams at :00
+    - cron: '15 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -12,5 +12,5 @@ jobs:
     steps:
       - name: Ping Alert Air Endpoint (Cold-Start Tolerant)
         run: |
-          curl -L --connect-timeout 60 --max-time 180 --retry 3 --retry-delay 10 \
+          curl -L --connect-timeout 60 --max-time 180 --retry 5 --retry-delay 15 \
           "https://alert-air-ezio.onrender.com/api/cron-trigger?secret=alert_air_secure_heartbeat_2026"
