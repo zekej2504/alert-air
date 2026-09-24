@@ -64,16 +64,32 @@ app.use(session({
 // --- THE AUTOMATED ENGINE (SIMULATION MODE) ---
 async function runAirQualityCheck() {
   try {
-    // 1. Fetch active tracking records from your database
+// 1. Fetch active tracking records from your database
     const activeWorksites = await prisma.worksite.findMany({
+      where: { isActive: true },
       include: { company: true }
     });
 
-    for (const site of activeWorksites) {
+for (const site of activeWorksites) {
       // Scoped at the top of the loop so the entire iteration can see them
       let liveAirNowAqi = 0; 
-      const voluntaryLimit = 151; 
-      const mandatoryLimit = 200;
+      let voluntaryLimit = 151; 
+      let mandatoryLimit = 200;
+
+      // Dynamic statutory thresholds based on worksite state
+      if (site.state === 'WA') {
+        voluntaryLimit = 69;   // WA L&I WAC 296-820
+        mandatoryLimit = 101;
+      } else if (site.state === 'OR') {
+        voluntaryLimit = 101;  // Oregon OSHA OAR 437-002-0156
+        mandatoryLimit = 251;
+      } else if (site.state === 'NV') {
+        voluntaryLimit = 150;
+        mandatoryLimit = 500;
+      } else if (site.state === 'CA') {
+        voluntaryLimit = 151;  // Cal/OSHA Title 8 § 5141.1
+        mandatoryLimit = 501;
+      }
 
       // Piecewise Linear Function to map raw PM2.5 (µg/m³) to standard AQI (0-500)
       const convertPM25ToAQI = (pm25: number): number => {
