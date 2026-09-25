@@ -1,9 +1,6 @@
-name: Alert Air Hourly Heartbeat
+name: Alert Air Manual Trigger
 
 on:
-  schedule:
-    # Runs at 15 minutes past every hour to avoid global GitHub traffic jams at :00
-    - cron: '15 * * * *'
   workflow_dispatch:
 
 jobs:
