@@ -492,6 +492,84 @@ app.post('/api/worksite', async (req, res) => {
     }
   });
   res.redirect('/admin');
+
+  // ⏰ SECURE BACKGROUND CRON TRIGGER ENDPOINT
+app.get('/api/cron-trigger', async (req, res) => {
+  const secret = req.query.secret;
+  if (secret !== 'alert_air_secure_heartbeat_2026') {
+    return res.status(401).send('Unauthorized');
+  }
+
+  console.log('⚡ Heartbeat received from GitHub Actions. Executing live air quality sync...');
+
+  try {
+    await runAirQualityCheck();
+    return res.status(200).send('Air quality tracking sync executed successfully.');
+  } catch (error) {
+    console.error('CRITICAL: Cron synchronization failure:', error);
+    return res.status(500).send('Internal pipeline synchronization failure.');
+  }
+});
+
+// 🧪 SIMULATED HAZARD ALERT TRIGGER (TESTS LIVE OUTBOUND SMS & RESEND ENGINE)
+app.get('/api/test-hazard-alert', async (req, res) => {
+  const secret = req.query.secret;
+  if (secret !== 'alert_air_secure_heartbeat_2026') {
+    return res.status(401).send('Unauthorized');
+  }
+
+  try {
+    const site = await prisma.worksite.findFirst({
+      where: { isActive: true },
+      include: { company: true }
+    });
+
+    if (!site) {
+      return res.status(404).send('No active worksites found to test.');
+    }
+
+    const simulatedAqi = 165;
+    const mandatoryLimit = site.state === 'WA' ? 101 : 151;
+
+    // 1. Log the simulated hazard excursion in the database
+    const testLog = await prisma.hourlyAirLog.create({
+      data: {
+        worksiteId: site.id,
+        aqi: simulatedAqi,
+        status: 'MANDATORY',
+        lawThreshold: mandatoryLimit
+      }
+    });
+
+    // 2. Format compliance alert message with secure signature link
+    const smsSubject = "SAFETY MANDATE";
+    const smsText = `CRITICAL: AQI at ${site.incidentName} hit ${simulatedAqi}. N95 masks are now MANDATORY for all personnel on site. Distribute masks immediately and log compliance here: https://alert-air.com/signoff/${site.id}/${testLog.id}`;
+
+    // 3. Dispatch to Foreman phone gateway via Resend SMTP
+    await transporter.sendMail({
+      from: '"Alert Air Compliance" <compliance@alert-air.com>',
+      to: `${site.foremanPhone}${site.carrier}`,
+      subject: smsSubject,
+      text: smsText
+    });
+
+    // 4. Dispatch to Company Admin if configured
+    if (site.company?.adminPhone && site.company?.adminCarrier) {
+      await transporter.sendMail({
+        from: '"Alert Air Compliance" <compliance@alert-air.com>',
+        to: `${site.company.adminPhone}${site.company.adminCarrier}`,
+        subject: 'CREW ALERT DISPATCHED',
+        text: `ADMIN ALERT: ${smsSubject} sent to crew at ${site.incidentName} (${simulatedAqi} AQI). Awaiting foreman sign-off.`
+      });
+    }
+
+    console.log(`🧪 Test hazard alert dispatched via Resend to ${site.foremanPhone}${site.carrier}`);
+    return res.status(200).send(`✅ Hazard simulated (165 AQI). Outbound alert dispatched to ${site.foremanPhone}${site.carrier}!`);
+  } catch (error: any) {
+    console.error('❌ Failed to dispatch test hazard alert:', error);
+    return res.status(500).send(`Failed to dispatch alert: ${error.message}`);
+  }
+});
 });
 
 // ⏰ SECURE BACKGROUND CRON TRIGGER ENDPOINT
