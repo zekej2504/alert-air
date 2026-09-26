@@ -1068,7 +1068,7 @@ app.get('/admin', async (req, res) => {
               <input type="text" name="crewLeadName" placeholder="Crew Lead Name" required style="padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px;">
               <input type="text" name="foremanPhone" placeholder="10-Digit Mobile Phone" required style="padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px;">
 
-              <button type="submit" style="grid-column: 1 / -1; background: #16a34a; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 15px; margin-top: 4px;">🚀 Deploy Crew</button>
+              <button type="submit" style="grid-column: 1 / -1; background: #16a34a; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 15px; margin-top: 4px;">Deploy Crew</button>
             </form>
           </div>
 
