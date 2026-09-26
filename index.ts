@@ -309,13 +309,7 @@ app.get('/signup', (req, res) => {
             <input type="text" name="companyName" placeholder="Company Name" required style="padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
             <input type="email" name="email" placeholder="Admin Email" required style="padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
             <input type="password" name="password" placeholder="Create Password" required style="padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
-            <input type="text" name="adminPhone" placeholder="Admin Cell (10 Digits)" style="padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
-            <select name="adminCarrier" style="padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; background: white;">
-              <option value="">Select Admin Carrier...</option>
-              <option value="@vtext.com">Verizon</option>
-              <option value="@txt.att.net">AT&T</option>
-              <option value="@tmomail.net">T-Mobile</option>
-            </select>
+           <input type="text" name="adminPhone" placeholder="Admin Cell (10 Digits)" style="padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
 
             <div style="display: flex; align-items: flex-start; gap: 0.5rem; text-align: left;">
               <input 
@@ -460,14 +454,14 @@ app.post('/signup', async (req, res) => {
   // 3. Cryptographically hash the password (salt 10 rounds)
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  // 4. Save the new company along with the immutable legal audit record properties
+// 4. Save the new company along with the immutable legal audit record properties
   const newCompany = await prisma.company.create({
     data: {
       name: companyName,
       contact: email,
       password: hashedPassword,
       adminPhone: adminPhone,
-      adminCarrier: adminCarrier,
+      adminCarrier: adminCarrier || "",
       
       // Commit the explicit legal sign-off signature details
       tosAccepted: true,
@@ -1068,9 +1062,22 @@ res.send(`
               `<a href="https://buy.stripe.com/fZu7sMgx34i7bDo4DHgrS00" target="_blank" style="display: inline-block; background: #6772e5; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; max-width: 200px; text-align: center;">💳 Start 14-Day Free Trial</a>` 
             : ``}
 
-            <div style="background: #e9ecef; padding: 15px; border-radius: 8px; font-size: 14px; color: #495057; border-left: 4px solid #6c757d; line-height: 1.5;">
-              <strong>Billing & Demobilization:</strong> Billing is flat-rate per active monitor deployment. To demobilize a crew and instantly stop billing for that unit, please email <a href="mailto:compliance@alert-air.com" style="color: #0275d8; font-weight: bold; text-decoration: none;">compliance@alert-air.com</a> with the incident name.
+            <div style="border-bottom: 2px solid #eee; padding-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div>
+                  <h1 style="color: #0275d8; font-size: 26px; margin: 0; letter-spacing: -0.5px; font-weight: 800;">Alert Air Wildfire Compliance</h1>
+                  <p style="color: #6c757d; margin-top: 6px; margin-bottom: 0; font-size: 15px; font-weight: 500;">Dashboard</p>
+                </div>
+                
+                <a href="/admin/litigation-records" style="display: inline-block; background: #1e293b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #0f172a;">
+                  Incident Archive
+                </a>
+              </div>
+
+            <div style="background: #e9ecef; padding: 15px; border-radius: 8px; font-size: 14px; color: #495057; border-left: 4px solid #0275d8; line-height: 1.5;">
+              <strong>Support & Questions:</strong> For operational inquiries, deployment assistance, or compliance questions, contact <a href="mailto:compliance@alert-air.com" style="color: #0275d8; font-weight: bold; text-decoration: none;">compliance@alert-air.com</a>.
             </div>
+              
+            <div style="overflow-x: auto; width: 100%; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); border: 1px solid #dee2e6;">
               
             <div style="overflow-x: auto; width: 100%; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); border: 1px solid #dee2e6;">
               <table style="width: 100%; min-width: 800px; border-collapse: collapse; text-align: left;">
