@@ -9,12 +9,14 @@ import session from 'express-session';
 import bcrypt from 'bcryptjs';
 import nodemailer from 'nodemailer';
 
-// --- ZERO-COST SMS ENGINE (SMTP) ---
+// --- AUTHENTICATED SMTP ENGINE (RESEND) ---
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.resend.com',
+  port: 465,
+  secure: true,
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
+    user: 'resend',
+    pass: process.env.RESEND_API_KEY
   }
 });
 
@@ -214,7 +216,7 @@ for (const site of activeWorksites) {
           }
 
           await transporter.sendMail({
-            from: '"Alert Air Compliance" <compliance.alertair@gmail.com>',
+            from: '"Alert Air Compliance" <compliance@alert-air.com>',
             to: `${site.foremanPhone}${site.carrier}`,
             subject: smsSubject,
             text: smsText
@@ -222,7 +224,7 @@ for (const site of activeWorksites) {
 
           if (site.company.adminPhone && site.company.adminCarrier) {
             await transporter.sendMail({
-              from: '"Alert Air Compliance" <compliance.alertair@gmail.com>',
+              from: '"Alert Air Compliance" <compliance@alert-air.com>',
               to: `${site.company.adminPhone}${site.company.adminCarrier}`,
               subject: 'CREW ALERT DISPATCHED',
               text: `ADMIN ALERT: ${smsSubject} sent to crew at ${site.incidentName} (${liveAirNowAqi} AQI). Awaiting foreman sign-off.`
@@ -776,7 +778,7 @@ try {
     if (site && site.company.adminPhone && site.company.adminCarrier) {
       try {
         await transporter.sendMail({
-          from: '"Alert Air Compliance" <compliance.alertair@gmail.com>',
+          from: '"Alert Air Compliance" <compliance@alert-air.com>',
           to: `${site.company.adminPhone}${site.company.adminCarrier}`,
           subject: 'COMPLIANCE SECURED',
           text: `COMPLIANCE SECURED: Crew lead ${signature} has officially signed off on N95 distribution for ${site.incidentName}.`
