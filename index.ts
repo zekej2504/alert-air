@@ -186,6 +186,12 @@ for (const site of activeWorksites) {
         orderBy: { timestamp: 'desc' }
       });
 
+      // 🛡️ DEDUPLICATION GUARD: Prevent writing duplicate records within a 5-minute window
+      if (lastLog && (Date.now() - new Date(lastLog.timestamp).getTime()) < 5 * 60 * 1000) {
+        console.log(`⏳ Throttled: Sync already recorded for ${site.incidentName} within the last 5 minutes. Skipping insert.`);
+        continue;
+      }
+
       const newLog = await prisma.hourlyAirLog.create({
         data: {
           worksiteId: site.id,
