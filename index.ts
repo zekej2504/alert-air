@@ -9,16 +9,27 @@ import session from 'express-session';
 import bcrypt from 'bcryptjs';
 import nodemailer from 'nodemailer';
 
-// --- AUTHENTICATED SMTP ENGINE (RESEND) ---
-const transporter = nodemailer.createTransport({
-  host: 'smtp.resend.com',
-  port: 465,
-  secure: true,
-  auth: {
-    user: 'resend',
-    pass: process.env.RESEND_API_KEY
+// --- RESEND HTTPS API ENGINE (PORT 443 - COMPATIBLE WITH RENDER FREE TIER) ---
+const transporter = {
+  sendMail: async (opts: { to: string; subject: string; text: string; from?: string }) => {
+    return axios.post(
+      'https://api.resend.com/emails',
+      {
+        from: 'Alert Air Compliance <compliance@alert-air.com>',
+        to: [opts.to],
+        subject: opts.subject,
+        text: opts.text
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000
+      }
+    );
   }
-});
+};
 
 // Tell TypeScript that our secure session will hold a companyId
 declare module 'express-session' {
