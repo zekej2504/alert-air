@@ -9,17 +9,66 @@ import session from 'express-session';
 import bcrypt from 'bcryptjs';
 import nodemailer from 'nodemailer';
 
-// --- GOOGLE HTTPS RELAY (BRANDED SENDER: compliance@alert-air.com) ---
+// --- DUAL-ENGINE SMS DISPATCH (TWILIO PRIMARY + GOOGLE RELAY FALLBACK) ---
 const transporter = {
   sendMail: async (opts: { to: string; subject: string; text: string; from?: string }) => {
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const fromNumber = process.env.TWILIO_PHONE_NUMBER;
     const relayUrl = process.env.GMAIL_RELAY_URL;
-    if (!relayUrl) throw new Error("GMAIL_RELAY_URL is not configured");
-    return axios.post(relayUrl, {
-      secret: 'alert_air_secure_heartbeat_2026',
-      to: opts.to,
+
+    // Sanitize recipient to E.164 (+1XXXXXXXXXX)
+    const rawDigits = opts.to.replace(/@.*$/, '').replace(/\D/g, '');
+    const formattedTo = rawDigits.startsWith('1') && rawDigits.length === 11 
+      ? `+${rawDigits}` 
+      : `+1${rawDigits}`;
+
+    // Attempt 1: Native Twilio Cellular REST API
+    if (accountSid && authToken && fromNumber) {
+      try {
+        const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+        const params = new URLSearchParams({
+          To: formattedTo,
+          From: fromNumber,
+          Body: opts.text,
+          StatusCallback: "https://alert-air.com/api/webhooks/twilio-status"
+        });
+
+        const response = await axios.post(url, params.toString(), {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString('base64')}`
+          },
+          timeout: 8000
+        });
+
+        console.log(`[Twilio Success] Message SID: ${response.data.sid} dispatched to ${formattedTo}`);
+        return response.data;
+      } catch (twilioErr: any) {
+        console.warn(`[Twilio Bypass] Code ${twilioErr.response?.data?.code || twilioErr.code}: ${twilioErr.response?.data?.message || twilioErr.message}. Engaging Google HTTPS relay...`);
+      }
+    }
+
+    // Attempt 2: Zero-Cost Google HTTPS Relay Fallback
+    if (!relayUrl) {
+      throw new Error("Dispatch failed: Twilio inactive and GMAIL_RELAY_URL is not set.");
+    }
+
+    // Default to T-Mobile gateway if raw digits were passed without domain
+    const fallbackTo = opts.to.includes('@') ? opts.to : `${rawDigits}@tmomail.net`;
+
+    const fallbackResponse = await axios.post(relayUrl, {
+      to: fallbackTo,
       subject: opts.subject,
-      text: opts.text
-    }, { timeout: 10000 });
+      text: opts.text,
+      secret: "alert_air_secure_heartbeat_2026"
+    }, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 8000
+    });
+
+    console.log(`[Google Relay Success] Dispatched to ${fallbackTo}`);
+    return fallbackResponse.data;
   }
 };
 
@@ -522,8 +571,9 @@ app.get('/api/test-hazard-alert', async (req, res) => {
   }
 
   try {
-    const site = await prisma.worksite.findFirst({
+  const site = await prisma.worksite.findFirst({
       where: { isActive: true },
+      orderBy: { id: 'desc' },
       include: { company: true }
     });
 
@@ -1506,6 +1556,15 @@ app.get('/admin/archive/export', async (req: any, res: any) => {
     console.error('❌ Failed to construct compliance CSV export:', error);
     return res.status(500).send('Database execution failed during audit export generation.');
   }
+});
+
+// --- TWILIO DELIVERY STATUS CALLBACK (OSHA AUDIT PROOF) ---
+app.post('/api/webhooks/twilio-status', express.urlencoded({ extended: false }), async (req, res) => {
+  const { MessageSid, MessageStatus, To, ErrorCode } = req.body;
+  
+  console.log(`[Twilio Delivery Event] SID: ${MessageSid} | To: ${To} | Status: ${MessageStatus} | Error: ${ErrorCode || 'None'}`);
+
+  res.status(200).send('<Response></Response>');
 });
 
 app.listen(PORT, () => console.log(`🔥 Alert Air Server running on port ${PORT}`));
