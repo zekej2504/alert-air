@@ -9,25 +9,17 @@ import session from 'express-session';
 import bcrypt from 'bcryptjs';
 import nodemailer from 'nodemailer';
 
-// --- RESEND HTTPS API ENGINE (PORT 443 - COMPATIBLE WITH RENDER FREE TIER) ---
+// --- GOOGLE HTTPS RELAY (BRANDED SENDER: compliance@alert-air.com) ---
 const transporter = {
   sendMail: async (opts: { to: string; subject: string; text: string; from?: string }) => {
-    return axios.post(
-      'https://api.resend.com/emails',
-      {
-        from: 'Alert Air Compliance <compliance@alert-air.com>',
-        to: [opts.to],
-        subject: opts.subject,
-        text: opts.text
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 10000
-      }
-    );
+    const relayUrl = process.env.GMAIL_RELAY_URL;
+    if (!relayUrl) throw new Error("GMAIL_RELAY_URL is not configured");
+    return axios.post(relayUrl, {
+      secret: 'alert_air_secure_heartbeat_2026',
+      to: opts.to,
+      subject: opts.subject,
+      text: opts.text
+    }, { timeout: 10000 });
   }
 };
 
