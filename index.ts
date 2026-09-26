@@ -955,152 +955,153 @@ app.get('/admin/seed-laws', async (req, res) => {
 
 // --- THE AUDIT DASHBOARD ---
 app.get('/admin', async (req, res) => {
-  // 1. THE BOUNCER: If you don't have a session key, go back to the login page!
   if (!req.session.companyId) {
     return res.redirect('/login');
   }
 
-// 2. THE SILO: Only pull worksites that belong to the securely logged-in company
   const worksites = await prisma.worksite.findMany({
     where: { companyId: req.session.companyId }, 
     include: { signOffs: { orderBy: { timestamp: 'desc' } } },
     orderBy: { isActive: 'desc' }
   });
 
-// 
-// 3. BUILD THE TABLE ROWS
   const rows = worksites.map(site => {
     const statusBadge = site.isActive 
-      ? `<span style="background: #d4edda; color: #155724; padding: 4px 8px; border-radius: 4px; font-weight: bold;">On-Site</span>`
-      : `<span style="background: #f8d7da; color: #721c24; padding: 4px 8px; border-radius: 4px; font-weight: bold;">Demobilized</span>`;
+      ? `<span style="background: #dcfce7; color: #15803d; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 13px; display: inline-block;">🟢 On-Site</span>`
+      : `<span style="background: #fee2e2; color: #b91c1c; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 13px; display: inline-block;">⚪ Demobilized</span>`;
 
     const toggleAction = site.isActive ? 'Demobilize Crew' : 'Remobilize Crew';
-    const buttonColor = site.isActive ? '#f0ad4e' : '#5cb85c';
+    const buttonColor = site.isActive ? '#d97706' : '#16a34a';
 
-    // Show a delete button ONLY if the crew has already been demobilized
     const deleteButton = !site.isActive 
       ? `
         <form action="/api/worksite/${site.id}/delete" method="POST" style="margin: 8px 0 0 0;" onsubmit="return confirm('Are you sure you want to permanently delete this crew and all its logs? This cannot be undone.');">
-          <button type="submit" style="background: #d9534f; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; font-size: 13px;">❌ Delete Record</button>
+          <button type="submit" style="background: #dc2626; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 700; width: 100%; font-size: 13px;">❌ Delete Record</button>
         </form>
       `
       : '';
 
     return `
-      <tr style="border-bottom: 1px solid #eee;">
-        <td style="padding: 16px;"><strong>${site.incidentName}</strong></td>
-        <td style="padding: 16px;">${statusBadge}</td>
-        
-        <td style="padding: 16px;">
-          <form action="/api/worksite/${site.id}/update-crew" method="POST" style="display: flex; flex-direction: column; gap: 6px; margin: 0;">
-            <input type="text" name="newName" value="${site.crewLeadName}" placeholder="Lead Name" style="padding: 6px; border: 1px solid #ccc; border-radius: 4px; width: 140px; font-size: 13px;">
-            <input type="text" name="newPhone" value="${site.foremanPhone}" placeholder="Phone Number" style="padding: 6px; border: 1px solid #ccc; border-radius: 4px; width: 140px; font-size: 13px;">
-            <button type="submit" style="background: #6c757d; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">Update Crew</button>
+      <tr style="border-bottom: 1px solid #e2e8f0;">
+        <td style="padding: 20px 24px; font-size: 16px; font-weight: 700; color: #0f172a; vertical-align: top;">
+          ${site.incidentName}
+          <div style="font-size: 12px; color: #64748b; font-weight: 500; margin-top: 4px;">State: ${site.state} | Lat: ${site.latitude}, Lon: ${site.longitude}</div>
+        </td>
+        <td style="padding: 20px 24px; vertical-align: top;">
+          ${statusBadge}
+        </td>
+        <td style="padding: 20px 24px; vertical-align: top;">
+          <form action="/api/worksite/${site.id}/update-crew" method="POST" style="display: flex; flex-direction: column; gap: 8px; margin: 0; min-width: 200px;">
+            <input type="text" name="newName" value="${site.crewLeadName || ''}" placeholder="Crew Lead Name" style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; width: 100%; box-sizing: border-box;">
+            <input type="text" name="newPhone" value="${site.foremanPhone || ''}" placeholder="10-Digit Phone" style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; width: 100%; box-sizing: border-box;">
+            <button type="submit" style="background: #475569; color: white; border: none; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 700;">Update Crew</button>
           </form>
         </td>
-
-        <td style="padding: 16px; vertical-align: top;">
+        <td style="padding: 20px 24px; vertical-align: top; min-width: 170px;">
           <form action="/api/worksite/${site.id}/toggle" method="POST" style="margin: 0;">
-            <button type="submit" style="background: ${buttonColor}; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">${toggleAction}</button>
+            <button type="submit" style="background: ${buttonColor}; color: white; border: none; padding: 10px 14px; border-radius: 6px; cursor: pointer; font-weight: 700; width: 100%; font-size: 14px;">${toggleAction}</button>
           </form>
           ${deleteButton}
         </td>
-        <td style="padding: 15px 16px; vertical-align: top;">
-          <a href="/admin/worksite/${site.id}/logs" style="display: inline-block; background: #3b82f6; color: white; padding: 8px 14px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 13px; box-shadow: 0 2px 4px rgba(59,130,246,0.3);">🔍 View Log History</a>
+        <td style="padding: 20px 24px; vertical-align: top; min-width: 180px;">
+          <a href="/admin/worksite/${site.id}/logs" style="display: block; text-align: center; background: #0284c7; color: white; padding: 10px 14px; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🔍 View Log History</a>
         </td>
       </tr>
     `;
   }).join('');
 
-res.send(`
+  res.send(`
     <html>
-      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f7f6; padding: 3rem 1rem; color: #333; margin: 0; display: flex; justify-content: center;">
+      <head>
+        <title>Alert Air Command Center</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc; padding: 2.5rem 1rem; color: #0f172a; margin: 0; display: flex; justify-content: center;">
         
-        <div style="max-width: 1000px; width: 100%; display: flex; flex-direction: column; gap: 2rem;">
+        <div style="max-width: 1100px; width: 100%; display: flex; flex-direction: column; gap: 1.75rem;">
             
-            <div style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
-              <h2 style="margin-top: 0; color: #2c3e50; font-weight: 800;"> Deploy New Crew</h2>
-              <form action="/api/worksite" method="POST" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
-                  <input type="text" name="incidentName" placeholder="Fire Name (e.g. Dixie Fire)" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; flex: 1; min-width: 200px;">
-                  
-                  <select name="state" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; width: 100px; background: white;">
-                    <option value="" disabled selected>State</option>
-                    <option value="CA">CA</option>
-                    <option value="OR">OR</option>
-                    <option value="WA">WA</option>
-                    <option value="NV">NV</option>
-                    <option value="ID">ID</option>
-                    <option value="MT">MT</option>
-                    <option value="UT">UT</option>
-                    <option value="AZ">AZ</option>
-                    <option value="CO">CO</option>
-                    <option value="WY">WY</option>
-                    <option value="NM">NM</option>
-                  </select>
-
-                  <input type="number" step="any" name="latitude" placeholder="Latitude" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; width: 120px;">
-                  <input type="number" step="any" name="longitude" placeholder="Longitude" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; width: 120px;">
-                  <input type="text" name="crewLeadName" placeholder="Crew Lead Name" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
-                  <input type="text" name="foremanPhone" placeholder="10-Digit Phone" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
-
-                  <button type="submit" style="background: #5cb85c; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold;">Deploy New Crew</button>
-              </form>
+          <!-- 1. CLEAN TOP HEADER -->
+          <div style="border-bottom: 2px solid #e2e8f0; padding-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+            <div>
+              <h1 style="color: #0284c7; font-size: 28px; margin: 0; letter-spacing: -0.5px; font-weight: 800;">Alert Air Wildfire Compliance</h1>
+              <p style="color: #64748b; margin-top: 4px; margin-bottom: 0; font-size: 15px; font-weight: 500;">Active Command & Oversight Dashboard</p>
             </div>
-
-           <div style="border-bottom: 2px solid #eee; padding-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-                <div>
-                  <h1 style="color: #0275d8; font-size: 26px; margin: 0; letter-spacing: -0.5px; font-weight: 800;">Alert Air Wildfire Compliance</h1>
-                  <p style="color: #6c757d; margin-top: 6px; margin-bottom: 0; font-size: 15px; font-weight: 500;">Dashboard</p>
-                </div>
-                
-                <a href="/admin/litigation-records" style="display: inline-block; background: #1e293b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #0f172a;">
-                  Incident Archive
-                </a>
-              </div>
-
-            ${worksites.length === 0 ?
-              `<a href="https://buy.stripe.com/fZu7sMgx34i7bDo4DHgrS00" target="_blank" style="display: inline-block; background: #6772e5; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; max-width: 200px; text-align: center;">💳 Start 14-Day Free Trial</a>` 
-            : ``}
-
-            <div style="border-bottom: 2px solid #eee; padding-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-                <div>
-                  <h1 style="color: #0275d8; font-size: 26px; margin: 0; letter-spacing: -0.5px; font-weight: 800;">Alert Air Wildfire Compliance</h1>
-                  <p style="color: #6c757d; margin-top: 6px; margin-bottom: 0; font-size: 15px; font-weight: 500;">Dashboard</p>
-                </div>
-                
-                <a href="/admin/litigation-records" style="display: inline-block; background: #1e293b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #0f172a;">
-                  Incident Archive
-                </a>
-              </div>
-
-            <div style="background: #e9ecef; padding: 15px; border-radius: 8px; font-size: 14px; color: #495057; border-left: 4px solid #0275d8; line-height: 1.5;">
-              <strong>Support & Questions:</strong> For operational inquiries, deployment assistance, or compliance questions, contact <a href="mailto:compliance@alert-air.com" style="color: #0275d8; font-weight: bold; text-decoration: none;">compliance@alert-air.com</a>.
+            
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <a href="/admin/litigation-records" style="display: inline-block; background: #0f172a; color: white; padding: 10px 20px; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                📁 Incident Archive
+              </a>
+              <a href="/logout" style="display: inline-block; background: #e2e8f0; color: #475569; padding: 10px 16px; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 14px;">
+                Logout
+              </a>
             </div>
+          </div>
+
+          <!-- 2. SUPPORT BANNER -->
+          <div style="background: #f1f5f9; padding: 14px 18px; border-radius: 8px; font-size: 14px; color: #334155; border-left: 4px solid #0284c7; line-height: 1.5;">
+            <strong>Support & Questions:</strong> For operational inquiries, deployment assistance, or compliance questions, contact <a href="mailto:compliance@alert-air.com" style="color: #0284c7; font-weight: 700; text-decoration: none;">compliance@alert-air.com</a>.
+          </div>
+
+          <!-- 3. DEPLOY NEW CREW CARD -->
+          <div style="background: white; padding: 1.75rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #e2e8f0;">
+            <h2 style="margin-top: 0; margin-bottom: 1.25rem; color: #0f172a; font-size: 18px; font-weight: 800;">Deploy New Crew</h2>
+            <form action="/api/worksite" method="POST" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; align-items: center;">
+              <input type="text" name="incidentName" placeholder="Fire Name (e.g. Dixie Fire)" required style="padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px;">
               
-            <div style="overflow-x: auto; width: 100%; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); border: 1px solid #dee2e6;">
-              
-            <div style="overflow-x: auto; width: 100%; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); border: 1px solid #dee2e6;">
-              <table style="width: 100%; min-width: 800px; border-collapse: collapse; text-align: left;">
+              <select name="state" required style="padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; background: white;">
+                <option value="" disabled selected>Select State</option>
+                <option value="CA">California (CA)</option>
+                <option value="OR">Oregon (OR)</option>
+                <option value="WA">Washington (WA)</option>
+                <option value="NV">Nevada (NV)</option>
+                <option value="ID">Idaho (ID)</option>
+                <option value="MT">Montana (MT)</option>
+                <option value="UT">Utah (UT)</option>
+                <option value="AZ">Arizona (AZ)</option>
+                <option value="CO">Colorado (CO)</option>
+                <option value="WY">Wyoming (WY)</option>
+                <option value="NM">New Mexico (NM)</option>
+              </select>
+
+              <input type="number" step="any" name="latitude" placeholder="Latitude" required style="padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px;">
+              <input type="number" step="any" name="longitude" placeholder="Longitude" required style="padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px;">
+              <input type="text" name="crewLeadName" placeholder="Crew Lead Name" required style="padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px;">
+              <input type="text" name="foremanPhone" placeholder="10-Digit Mobile Phone" required style="padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px;">
+
+              <button type="submit" style="grid-column: 1 / -1; background: #16a34a; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 15px; margin-top: 4px;">🚀 Deploy Crew</button>
+            </form>
+          </div>
+
+          <!-- 4. ACTIVE DEPLOYMENTS TABLE -->
+          <div style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; overflow: hidden;">
+            <div style="padding: 18px 24px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+              <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: #0f172a;">Active Worksite Deployments</h3>
+            </div>
+            
+            <div style="overflow-x: auto; width: 100%;">
+              <table style="width: 100%; min-width: 900px; border-collapse: collapse; text-align: left;">
                 <thead>
-                  <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; color: #495057; font-size: 13px; font-weight: 800;">
-                    <th style="padding: 16px;">INCIDENT NAME</th>
-                    <th style="padding: 16px;">STATUS</th>
-                    <th style="padding: 16px;">CREW LEAD DETAILS</th>
-                    <th style="padding: 16px;">ACTIONS</th>
-                    <th style="padding: 16px;">AUDIT Record</th>
+                  <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #475569; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">
+                    <th style="padding: 14px 24px;">Incident Name</th>
+                    <th style="padding: 14px 24px;">Status</th>
+                    <th style="padding: 14px 24px;">Crew Lead Details</th>
+                    <th style="padding: 14px 24px;">Actions</th>
+                    <th style="padding: 14px 24px;">Audit Record</th>
                   </tr>
                 </thead>
-                <tbody style="font-size: 14px; color: #333;">
-                  ${rows}
+                <tbody style="font-size: 14px; color: #334155;">
+                  ${rows.length > 0 ? rows : '<tr><td colspan="5" style="padding: 40px; text-align: center; color: #94a3b8; font-weight: 500;">No active crews deployed yet. Use the form above to deploy your first crew.</td></tr>'}
                 </tbody>
               </table>
             </div>
+          </div>
             
         </div>
       </body>
     </html>
   `);
 });
+
 // --- THE MOBILE SIGNOFF PAGE (NATIVE APP UPGRADE) ---
 app.get('/signoff/:worksiteId/:logId', async (req, res) => {
   res.send(`
