@@ -476,7 +476,6 @@ app.get('/logout', (req, res) => {
 app.post('/api/worksite', async (req, res) => {
   if (!req.session.companyId) return res.redirect('/login');
 
-  // UPDATED: Now pulling 'carrier' from the dropdown form
   const { incidentName, state, latitude, longitude, crewLeadName, foremanPhone, carrier } = req.body;
   
   await prisma.worksite.create({
@@ -486,14 +485,15 @@ app.post('/api/worksite', async (req, res) => {
       latitude: parseFloat(latitude),
       longitude: parseFloat(longitude),
       crewLeadName,
-      foremanPhone, // Saves just the numbers
-      carrier,      // Saves the @vtext.com gateway
+      foremanPhone,
+      carrier,
       companyId: req.session.companyId 
     }
   });
   res.redirect('/admin');
+});
 
-  // ⏰ SECURE BACKGROUND CRON TRIGGER ENDPOINT
+// ⏰ SECURE BACKGROUND CRON TRIGGER ENDPOINT
 app.get('/api/cron-trigger', async (req, res) => {
   const secret = req.query.secret;
   if (secret !== 'alert_air_secure_heartbeat_2026') {
@@ -568,26 +568,6 @@ app.get('/api/test-hazard-alert', async (req, res) => {
   } catch (error: any) {
     console.error('❌ Failed to dispatch test hazard alert:', error);
     return res.status(500).send(`Failed to dispatch alert: ${error.message}`);
-  }
-});
-});
-
-// ⏰ SECURE BACKGROUND CRON TRIGGER ENDPOINT
-app.get('/api/cron-trigger', async (req, res) => {
-  // (Keep whatever secret validation code you already have here)
-  const secret = req.query.secret;
-  if (secret !== 'alert_air_secure_heartbeat_2026') {
-    return res.status(401).send('Unauthorized');
-  }
-
-console.log('⚡ Heartbeat received from GitHub Actions. Executing live air quality sync...');
-
-  try {
-    await runAirQualityCheck();
-    return res.status(200).send('Air quality tracking sync executed successfully.');
-  } catch (error) {
-    console.error('CRITICAL: Cron synchronization failure:', error);
-    return res.status(500).send('Internal pipeline synchronization failure.');
   }
 });
 
