@@ -218,12 +218,12 @@ for (const site of activeWorksites) {
 
       if (alertLevel !== "SAFE" && isNewEscalation) {
         try {
-          let smsSubject = "SMOKE ALERT";
-          let smsText = `AQI at ${site.incidentName} is ${liveAirNowAqi}. Smoke is getting heavy. N95 masks are available for voluntary use. Grab masks for interested crew and sign off here: https://alert-air-ezio.onrender.com/signoff/${site.id}/${newLog.id}`;
+         let smsSubject = "Alert Air Notice";
+          let smsText = `AQI at ${site.incidentName} is ${liveAirNowAqi}. N95 respirators available for voluntary use. Sign off: alert-air.com/signoff/${site.id}/${newLog.id}`;
 
           if (alertLevel === "MANDATORY") {
-            smsSubject = "SAFETY MANDATE";
-            smsText = `CRITICAL: AQI at ${site.incidentName} hit ${liveAirNowAqi}. N95 masks are now MANDATORY for all personnel on site. Distribute masks immediately and log compliance here: https://alert-air-ezio.onrender.com/signoff/${site.id}/${newLog.id}`;
+            smsSubject = "Alert Air Update";
+            smsText = `AQI at ${site.incidentName} reached ${liveAirNowAqi}. N95 respirators are now mandatory on site. Sign off: alert-air.com/signoff/${site.id}/${newLog.id}`;
           }
 
           await transporter.sendMail({
@@ -553,8 +553,8 @@ app.get('/api/test-hazard-alert', async (req, res) => {
     });
 
     // 2. Format compliance alert message with secure signature link
-    const smsSubject = "SAFETY MANDATE";
-    const smsText = `CRITICAL: AQI at ${site.incidentName} hit ${simulatedAqi}. N95 masks are now MANDATORY for all personnel on site. Distribute masks immediately and log compliance here: https://alert-air.com/signoff/${site.id}/${testLog.id}`;
+    const smsSubject = "Alert Air Update";
+    const smsText = `AQI at ${site.incidentName} is ${simulatedAqi}. Compliance sign-off required: alert-air.com/signoff/${site.id}/${testLog.id}`;
 
     // 3. Dispatch to Foreman phone gateway via Resend SMTP
     await transporter.sendMail({
