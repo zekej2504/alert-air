@@ -538,7 +538,7 @@ app.post('/api/worksite', async (req, res) => {
       longitude: parseFloat(longitude),
       crewLeadName,
       foremanPhone,
-      carrier,
+      carrier: carrier || "",
       companyId: req.session.companyId 
     }
   });
@@ -1048,13 +1048,6 @@ res.send(`
                   <input type="number" step="any" name="longitude" placeholder="Longitude" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; width: 120px;">
                   <input type="text" name="crewLeadName" placeholder="Crew Lead Name" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
                   <input type="text" name="foremanPhone" placeholder="10-Digit Phone" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
-
-                  <select name="carrier" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; background: white;">
-                    <option value="">Select Carrier...</option>
-                    <option value="@vtext.com">Verizon</option>
-                    <option value="@txt.att.net">AT&T</option>
-                    <option value="@tmomail.net">T-Mobile</option>
-                  </select>
 
                   <button type="submit" style="background: #5cb85c; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold;">Deploy New Crew</button>
               </form>
