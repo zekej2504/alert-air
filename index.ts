@@ -9,52 +9,47 @@ import session from 'express-session';
 import bcrypt from 'bcryptjs';
 import nodemailer from 'nodemailer';
 
-// --- DUAL-ENGINE SMS DISPATCH (TWILIO PRIMARY + GOOGLE RELAY FALLBACK) ---
+// --- DUAL-ENGINE SMS DISPATCH (TELNYX PRIMARY + GOOGLE RELAY FALLBACK) ---
 const transporter = {
   sendMail: async (opts: { to: string; subject: string; text: string; from?: string }) => {
-    const accountSid = process.env.TWILIO_ACCOUNT_SID;
-    const authToken = process.env.TWILIO_AUTH_TOKEN;
-    const fromNumber = process.env.TWILIO_PHONE_NUMBER;
+    const apiKey = process.env.TELNYX_API_KEY;
+    const fromNumber = process.env.TELNYX_PHONE_NUMBER;
     const relayUrl = process.env.GMAIL_RELAY_URL;
 
-    // Sanitize recipient to E.164 (+1XXXXXXXXXX)
+    // Sanitize recipient to E.164 format (+1XXXXXXXXXX)
     const rawDigits = opts.to.replace(/@.*$/, '').replace(/\D/g, '');
     const formattedTo = rawDigits.startsWith('1') && rawDigits.length === 11 
       ? `+${rawDigits}` 
       : `+1${rawDigits}`;
 
-    // Attempt 1: Native Twilio Cellular REST API
-    if (accountSid && authToken && fromNumber) {
+    // Attempt 1: Native Telnyx Cellular REST API ($0.0040/sms)
+    if (apiKey && fromNumber) {
       try {
-        const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
-        const params = new URLSearchParams({
-          To: formattedTo,
-          From: fromNumber,
-          Body: opts.text,
-          StatusCallback: "https://alert-air.com/api/webhooks/twilio-status"
-        });
-
-        const response = await axios.post(url, params.toString(), {
+        const response = await axios.post('https://api.telnyx.com/v2/messages', {
+          from: fromNumber,
+          to: formattedTo,
+          text: opts.text
+        }, {
           headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Authorization': `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString('base64')}`
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
           },
           timeout: 8000
         });
 
-        console.log(`[Twilio Success] Message SID: ${response.data.sid} dispatched to ${formattedTo}`);
+        console.log(`[Telnyx Success] Message ID: ${response.data?.data?.id} dispatched to ${formattedTo}`);
         return response.data;
-      } catch (twilioErr: any) {
-        console.warn(`[Twilio Bypass] Code ${twilioErr.response?.data?.code || twilioErr.code}: ${twilioErr.response?.data?.message || twilioErr.message}. Engaging Google HTTPS relay...`);
+      } catch (telnyxErr: any) {
+        console.warn(`[Telnyx Bypass] ${telnyxErr.response?.data?.errors?.[0]?.detail || telnyxErr.message}. Engaging Google HTTPS relay...`);
       }
     }
 
     // Attempt 2: Zero-Cost Google HTTPS Relay Fallback
     if (!relayUrl) {
-      throw new Error("Dispatch failed: Twilio inactive and GMAIL_RELAY_URL is not set.");
+      throw new Error("Dispatch failed: Telnyx inactive and GMAIL_RELAY_URL is not set.");
     }
 
-    // Default to T-Mobile gateway if raw digits were passed without domain
+    // Preserve gateway domain if passed, otherwise default to T-Mobile
     const fallbackTo = opts.to.includes('@') ? opts.to : `${rawDigits}@tmomail.net`;
 
     const fallbackResponse = await axios.post(relayUrl, {
