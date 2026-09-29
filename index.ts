@@ -381,9 +381,9 @@ app.get('/terms', (req, res) => {
       <head>
         <title>Terms of Service - Alert Air</title>
       </head>
-      <body style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #334155; background: #f8fafc; padding: 4rem 1rem; margin: 0; display: flex; justify-content: center;">
+      <body style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #334155; background: #f8fafc; margin: 0; padding: 40px 20px;">
         
-        <div style="background: white; padding: 3rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); max-width: 650px; width: 100%; height: auto; box-sizing: border-box;">
+        <div style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); max-width: 650px; margin: 0 auto; box-sizing: border-box;">
           
           <h1 style="color: #0f172a; font-size: 28px; margin-top: 0; margin-bottom: 0.5rem; letter-spacing: -0.5px;">Terms of Service</h1>
           <p style="color: #64748b; font-size: 14px; margin-top: 0; margin-bottom: 2rem;">Last Updated: September 2026</p>
@@ -423,9 +423,9 @@ app.get('/privacy', (req, res) => {
       <head>
         <title>Privacy Policy - Alert Air</title>
       </head>
-      <body style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #334155; background: #f8fafc; padding: 4rem 1rem; margin: 0; display: flex; justify-content: center;">
+      <body style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #334155; background: #f8fafc; margin: 0; padding: 40px 20px;">
         
-        <div style="background: white; padding: 3rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); max-width: 650px; width: 100%; height: auto; box-sizing: border-box;">
+        <div style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); max-width: 650px; margin: 0 auto; box-sizing: border-box;">
           
           <h1 style="color: #0f172a; font-size: 28px; margin-top: 0; margin-bottom: 0.5rem; letter-spacing: -0.5px;">Privacy Policy</h1>
           <p style="color: #64748b; font-size: 14px; margin-top: 0; margin-bottom: 2rem;">Last Updated: June 2026</p>
