@@ -812,7 +812,49 @@ app.get('/', (req, res) => {
     </html>
   `);
 });
+// --- PUBLIC LANDING PAGE (THE SALES PITCH) ---
+app.get('/', (req, res) => {
+  // ... landing page HTML ...
+});
 
+// 🖼️ COMPLIANCE OPT-IN WORKFLOW PROOF ENDPOINT (INSERT HERE)
+app.get('/compliance/opt-in-proof', (req, res) => {
+  res.send(`
+    <html>
+      <head>
+        <title>Alert Air - Opt-In Workflow Proof</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f8fafc; padding: 40px; color: #1e293b; max-width: 800px; margin: 0 auto; line-height: 1.6; }
+          .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border-top: 6px solid #2563eb; }
+          h1 { color: #0f172a; font-size: 24px; margin-top: 0; }
+          .box { background: #f1f5f9; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2563eb; font-family: monospace; font-size: 14px; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <h1>Alert Air — User Opt-In Workflow Documentation</h1>
+          <p>This page serves as official compliance verification for Telnyx carrier review. Under Alert Air's B2B architecture, phone numbers are provisioned and authorized by corporate safety managers.</p>
+          
+          <h3>1. Administrative Collection Mechanism</h3>
+          <p>Contractor safety managers manually enter crew lead mobile numbers inside the authenticated signup and worksite deployment portal (<a href="https://alert-air.com/signup" target="_blank">alert-air.com/signup</a>).</p>
+
+          <h3>2. Mandatory Legal Agreement (Terms of Service)</h3>
+          <div class="box">
+            "I represent the corporate subscriber and explicitly agree to Alert Air's Terms of Service and Privacy Policy, including Third-Party Data Accuracy Disclaimers and automated SMS hazard notification dispatches."
+          </div>
+
+          <h3>3. Explicit Consent & Opt-Out Notice</h3>
+          <p>Field supervisors receive initial internal onboarding indicating their mobile device will receive real-time statutory air quality hazard warnings during active wildfire dispatches. Every outbound notification includes explicit opt-out instructions (<strong>Reply STOP to cancel</strong>).</p>
+        </div>
+      </body>
+    </html>
+  `);
+});
+
+// 2. THE WORKER SIGN-OFF PORTAL (UPDATED WITH SIGNATURE)
+app.get('/signoff/:id', (req, res) => {
+  // ...
+});
 // 2. THE WORKER SIGN-OFF PORTAL (UPDATED WITH SIGNATURE)
 app.get('/signoff/:id', (req, res) => {
   const siteId = req.params.id;
